@@ -1,0 +1,5 @@
+.vscode/
+include/gflags
+include/rapidjson
+include/rocksdb
+include/spdlog
