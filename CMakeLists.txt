@@ -51,7 +51,7 @@ set(SERVER_SRCS
     src/server/worker_thread.cc)
 
 set(CONNECTOR_SRCS
-    src/client/connection.cc
+    src/connector/connection.cc
     ${PROTOCOL_SRCS})
 
 set(CLIENT_SRCS
