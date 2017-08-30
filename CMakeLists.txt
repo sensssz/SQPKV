@@ -50,12 +50,18 @@ set(SERVER_SRCS
     src/server/table_prefix_transform.cc
     src/server/worker_thread.cc)
 
+set(CONNECTOR_SRCS
+    src/client/connection.cc
+    ${PROTOCOL_SRCS})
+
 set(CLIENT_SRCS
-    src/client/main.cc
-    src/client/connection.cc)
- 
-add_executable(server ${RDMA_SRCS} ${PROTOCOL_SRCS} ${SERVER_SRCS})
-target_link_libraries(server
+    src/client/main.cc)
+
+add_library(sqpkv_connector SHARED
+    ${CONNECTOR_SRCS})
+    
+add_executable(sqpkv_server ${RDMA_SRCS} ${PROTOCOL_SRCS} ${SERVER_SRCS})
+target_link_libraries(sqpkv_server
     ${CMAKE_THREAD_LIBS_INIT}
     ${ZLIB_LIBRARIES}
     ${BZIP2_LIBRARIES}
@@ -67,8 +73,9 @@ target_link_libraries(server
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
 
-add_executable(client ${PROTOCOL_SRCS} ${CLIENT_SRCS})
-target_link_libraries(client
+add_executable(sqpkv_client ${CLIENT_SRCS})
+target_link_libraries(sqpkv_client
+    sqpkv_connector
     ${CMAKE_THREAD_LIBS_INIT}
     ${ZLIB_LIBRARIES}
     ${BZIP2_LIBRARIES}
@@ -111,3 +118,9 @@ target_link_libraries(test_client
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
+
+file(GLOB CONNECTOR_HEADERS include/sqpkv/*.h)
+install(FILES ${CONNECTOR_HEADERS} DESTINATION include/sqpkv/)
+install(TARGETS sqpkv_connector DESTINATION lib/)
+install(TARGETS sqpkv_server DESTINATION bin/)
+install(TARGETS sqpkv_client DESTINATION bin/)

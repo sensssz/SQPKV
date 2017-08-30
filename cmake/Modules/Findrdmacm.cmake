@@ -5,7 +5,7 @@
 #  RDMA_LIBRARIES   - List of libraries when using rdmacm.
 #  RDMA_FOUND       - True if rdma found.
 
-find_path(RDMA_INCLUDE_DIR rdma.h NO_DEFAULT_PATH PATHS
+find_path(RDMA_INCLUDE_DIR rdma/rdma_cma.h NO_DEFAULT_PATH PATHS
   ${SQPKV_DEPENDENCY_INCLUDE_DIR}
   /usr/include
   /opt/local/include
