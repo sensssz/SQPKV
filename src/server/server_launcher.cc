@@ -262,9 +262,6 @@ int ServerLauncher::ShardMain() {
   int port = server.port();
   ExchangeRDMAPort(port);
   server.Run();
-  // auto worker_factory = std::unique_ptr<WorkerFactory>(new sqpkv::KvWorkerFactory(db_));
-  // sqpkv::Server *server = sqpkv::Server::GetInstance(std::move(worker_factory), FLAGS_port);
-  // server->Start();
   return 0;
 }
 
