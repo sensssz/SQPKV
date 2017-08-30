@@ -10,48 +10,46 @@
 namespace sqpkv {
 
 StatusOr<ShardingProxyWorker> ShardingProxyWorker::CreateProxy(
-  std::vector<std::string> &hostnames, int port, int clientfd) {
-  std::vector<int> server_fds;
+  std::vector<std::string> &hostnames, std::vector<int> &ports, int proxy_port, int client_fd) {
+  std::vector<RDMAClient> shard_server_clients;
   Status s;
-  for (auto &hostname : hostnames) {
-    int server_fd = SockConnectTo(hostname, port);
-    if (server_fd << 0) {
-      s = Status::Err();
+  auto request_handler = make_unique<ShardingProxyRequestHandler>(client_fd, hostnames.size());
+  for (size_t i = 0; i < hostnames.size(); ++i) {
+    std::string &hostname = hostnames[i];
+    int port = ports[i];
+    RDMAClient client(request_handler.get(), hostname, port);
+    s = client.Connect();
+    if (!s.ok()) {
       break;
     }
-    server_fds.push_back(server_fd);
+    shard_server_clients.push_back(std::move(client));
   }
   if (!s.ok()) {
-    for (auto &fd : server_fds) {
-      close(fd);
+    for (auto &client : shard_server_clients) {
+      client.Disconnect();
     }
     return s;
   }
-  return std::unique_ptr<ShardingProxyWorker>(new ShardingProxyWorker(clientfd, server_fds));
+  return make_unique<ShardingProxyWorker>(client_fd, std::move(request_handler), shard_server_clients);
 }
 
-Status ShardingProxyWorker::DispatchPacket(const rocksdb::Slice &key,
-  const rocksdb::Slice &data, Protocol protocol) const {
+Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data) {
   int shard_id = sharding_policy_->GetShardId(key);
-  int serverfd = shard_servers_[shard_id - 1];
-  Status status = protocol.SendPacket(serverfd, data);
+  auto &shard_client = shard_server_clients_[shard_id];
+  memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
+  auto status = shard_client.SendToServer(data.size_);
+  // The response will be sent back to the client by the request handler.
   if (status.err()) {
-    spdlog::get("console")->error("Error sending response: " + status.message());
-    return status;
-  }
-  // Retrieve response from server and forward it to the client.
-  status = protocol.ForwardPacket(serverfd, clientfd_);
-  if (status.err()) {
-    spdlog::get("console")->error("Error forwarding packet: " + status.message());
+    spdlog::get("console")->error("Error forwarding request to server: " + status.message());
   }
   return status;
 }
 
-void ShardingProxyWorker::HandleClient(const ShardingProxyWorker *proxy) {
+void ShardingProxyWorker::HandleClient() {
   Protocol protocol;
   Status status;
   while (status.ok()) {
-    auto packet = protocol.ReadFromClient(proxy->clientfd_);
+    auto packet = protocol.ReadFromClient(client_fd_);
     if (packet.err()) {
       spdlog::get("console")->error("Error reading from client: " + packet.message());
       break;
@@ -65,7 +63,7 @@ void ShardingProxyWorker::HandleClient(const ShardingProxyWorker *proxy) {
         GetPacket *get = reinterpret_cast<GetPacket *>(packet.GetPtr());
         rocksdb::Slice key = get->key();
         const rocksdb::Slice &data = packet->ToBinary();
-        status = proxy->DispatchPacket(key, data, protocol);
+        status = ForwardPacket(key, data);
       }
       break;
     case kPut:
@@ -73,7 +71,7 @@ void ShardingProxyWorker::HandleClient(const ShardingProxyWorker *proxy) {
         PutPacket *put = reinterpret_cast<PutPacket *>(packet.GetPtr());
         rocksdb::Slice key = put->key();
         const rocksdb::Slice &data = packet->ToBinary();
-        status = proxy->DispatchPacket(key, data, protocol);
+        status = ForwardPacket(key, data);
       }
       break;
     case kDelete:
@@ -81,17 +79,15 @@ void ShardingProxyWorker::HandleClient(const ShardingProxyWorker *proxy) {
         DeletePacket *delete_packet = reinterpret_cast<DeletePacket *>(packet.GetPtr());
         rocksdb::Slice key = delete_packet->key();
         const rocksdb::Slice &data = packet->ToBinary();
-        status = proxy->DispatchPacket(key, data, protocol);
+        status = ForwardPacket(key, data);
       }
       break;
     case kGetAll:
       {
-        GetAllPacket *get_all = reinterpret_cast<GetAllPacket *>(packet.GetPtr());
-        rocksdb::Slice prefix = get_all->prefix();
         const rocksdb::Slice &data = packet->ToBinary();
-        std::vector<std::string> keys;
-        for (auto &serverfd : proxy->shard_servers_) {
-          status = protocol.SendPacket(serverfd, data);
+        for (auto &shard_client : shard_server_clients_) {
+          memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
+          status = shard_client.SendToServer(data.size_);
           if (!status.ok()) {
             break;
           }
@@ -99,20 +95,9 @@ void ShardingProxyWorker::HandleClient(const ShardingProxyWorker *proxy) {
         if (!status.ok()) {
           break;
         }
-        for (auto &serverfd : proxy->shard_servers_) {
-          auto resp = protocol.ReadFromServer(serverfd);
-          if (!resp.ok()) {
-            status = resp.status();
-            break;
-          }
-          auto get_all_resp = reinterpret_cast<GetAllResponsePacket *>(resp.GetPtr());
-          get_all_resp->AddKeys(keys);
-        }
-        if (!status.ok()) {
-          break;
-        }
+        auto keys = request_handler_->all_keys();
         GetAllResponsePacket get_all_resp(Status::Ok(), keys);
-        status = protocol.SendPacket(proxy->clientfd_, get_all_resp);
+        status = protocol.SendPacket(client_fd_, get_all_resp);
       }
       break;
     default:
@@ -125,23 +110,24 @@ void ShardingProxyWorker::HandleClient(const ShardingProxyWorker *proxy) {
   }
 }
 
-ShardingProxyWorker::ShardingProxyWorker(int clientfd, std::vector<int> &server_fds) :
-    clientfd_(clientfd), shard_servers_(server_fds),
+ShardingProxyWorker::ShardingProxyWorker(int client_fd, std::unique_ptr<ShardingProxyRequestHandler> request_handler,
+  std::vector<RDMAClient> &shard_server_clients) :
+    client_fd_(client_fd), request_handler_(std::move(request_handler)),
+    shard_server_clients_(std::move(shard_server_clients)),
     sharding_policy_(std::unique_ptr<ShardingPolicy>(
-                     new RoundRobinShardingPolicy(server_fds.size()))) {
-  thread_ = std::thread(HandleClient, this);
+                     new RoundRobinShardingPolicy(shard_server_clients_.size()))) {
+  thread_ = std::thread(&ShardingProxyWorker::HandleClient, this);
 }
 
-
 void ShardingProxyWorker::Stop() {
-  if (clientfd_ != -1) {
-    close(clientfd_);
+  if (client_fd_ != -1) {
+    close(client_fd_);
   }
-  clientfd_ = -1;
-  for (auto &serverfd : shard_servers_) {
-    close(serverfd);
+  client_fd_ = -1;
+  for (auto &client : shard_server_clients_) {
+    client.Disconnect();
   }
-  shard_servers_.clear();
+  shard_server_clients_.clear();
   thread_.join();
 }
 

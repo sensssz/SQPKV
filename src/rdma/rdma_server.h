@@ -11,10 +11,11 @@ namespace sqpkv {
 
 class RDMAServer : public RDMAConnection {
 public:
-  RDMAServer(std::unique_ptr<RequestHandler> request_handler);
+  RDMAServer(RequestHandler *request_handler);
   Status Initialize();
   int port();
   void Run();
+  void Stop();
 
 protected:
   virtual Status OnAddressResolved(struct rdma_cm_id *id) override;
@@ -23,6 +24,7 @@ protected:
 
 private:
   int port_;
+  struct rdma_cm_id *cm_id_;
   struct rdma_event_channel *event_channel_;
 };
 

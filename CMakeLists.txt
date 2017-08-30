@@ -7,8 +7,9 @@ include_directories(include)
 include_directories(src)
 include_directories($ENV{HOME}/usr/include)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -rdynamic -std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -rdynamic -std=c++11")
+set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -rdynamic -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -Wall -Werror -rdynamic -std=c++11")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(SQPKV_DEPENDENCY_INCLUDE_DIR $ENV{HOME}/usr/include)
@@ -27,7 +28,7 @@ find_package( rdma REQUIRED )
 set(RDMA_SRCS
     src/rdma/rdma_connection.cc
     src/rdma/rdma_client.cc
-    src/rdma/rdma_connection.cc)
+    src/rdma/rdma_server.cc)
 
 set(PROTOCOL_SRCS
     src/protocol/net_utils.cc
@@ -68,6 +69,38 @@ target_link_libraries(server
 
 add_executable(client ${PROTOCOL_SRCS} ${CLIENT_SRCS})
 target_link_libraries(client
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ZLIB_LIBRARIES}
+    ${BZIP2_LIBRARIES}
+    ${ROCKSDB_LIBRARY}
+    ${SNAPPY_LIBRARY}
+    ${LZ4_LIBRARY}
+    ${ZSTD_LIBRARY}
+    ${GFLAGS_LIBRARY}
+    ${RDMA_LIBRARY}
+    ${IBVERBS_LIBRARY} )
+
+add_executable(test_server
+    ${RDMA_SRCS}
+    test/server.cc
+    src/protocol/status.cc)
+target_link_libraries(test_server
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ZLIB_LIBRARIES}
+    ${BZIP2_LIBRARIES}
+    ${ROCKSDB_LIBRARY}
+    ${SNAPPY_LIBRARY}
+    ${LZ4_LIBRARY}
+    ${ZSTD_LIBRARY}
+    ${GFLAGS_LIBRARY}
+    ${RDMA_LIBRARY}
+    ${IBVERBS_LIBRARY} )
+ 
+add_executable(test_client
+    ${RDMA_SRCS}
+    test/client.cc
+    src/protocol/status.cc)
+target_link_libraries(test_client
     ${CMAKE_THREAD_LIBS_INIT}
     ${ZLIB_LIBRARIES}
     ${BZIP2_LIBRARIES}

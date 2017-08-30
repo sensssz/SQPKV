@@ -4,22 +4,21 @@
 
 namespace sqpkv {
 
-RDMAServer::RDMAServer(std::unique_ptr<RequestHandler> request_handler) :
-    RDMAConnection(std::move(request_handler)),
-    port_(-1), event_channel_(nullptr) {}
+RDMAServer::RDMAServer(RequestHandler *request_handler) :
+    RDMAConnection(request_handler),
+    port_(-1), cm_id_(nullptr), event_channel_(nullptr) {}
 
 Status RDMAServer::Initialize() {
   struct sockaddr_in6 addr;
-  struct rdma_cm_id *cm_id = nullptr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
 
   ERROR_IF_ZERO(event_channel_ = rdma_create_event_channel());
-  ERROR_IF_NON_ZERO(rdma_create_id(event_channel_, &cm_id, nullptr, RDMA_PS_TCP));
-  ERROR_IF_NON_ZERO(rdma_bind_addr(cm_id, (struct sockaddr *)&addr));
-  ERROR_IF_NON_ZERO(rdma_listen(cm_id, 10)); /* backlog=10 is arbitrary */
+  ERROR_IF_NON_ZERO(rdma_create_id(event_channel_, &cm_id_, nullptr, RDMA_PS_TCP));
+  ERROR_IF_NON_ZERO(rdma_bind_addr(cm_id_, (struct sockaddr *)&addr));
+  ERROR_IF_NON_ZERO(rdma_listen(cm_id_, 10)); /* backlog=10 is arbitrary */
 
-  port_ = ntohs(rdma_get_src_port(cm_id));
+  port_ = ntohs(rdma_get_src_port(cm_id_));
   return Status::Ok();
 }
 
@@ -28,18 +27,24 @@ int RDMAServer::port() {
 }
 
 void RDMAServer::Run() {
+  spdlog::get("console")->debug("Running event loop on server");
   struct rdma_cm_event *event = nullptr;
-  while (!terminate_ && rdma_get_cm_event(event_channel_, &event) == 0) {
+  while (rdma_get_cm_event(event_channel_, &event) == 0) {
     struct rdma_cm_event event_copy;
 
     memcpy(&event_copy, event, sizeof(*event));
     rdma_ack_cm_event(event);
 
+    spdlog::get("console")->debug("Event retrieved.");
     auto status = OnEvent(&event_copy);
     if (!status.ok()) {
       spdlog::get("console")->error("Error processing event {}", status.message());
     }
   }
+}
+
+void RDMAServer::Stop() {
+  rdma_disconnect(cm_id_);
 }
 
 Status RDMAServer::OnAddressResolved(struct rdma_cm_id *id) {
@@ -58,7 +63,9 @@ Status RDMAServer::OnConnectRequest(struct rdma_cm_id *id) {
   if (!status_or.ok()) {
     return status_or.status();
   }
+
   auto context = status_or.Take();
+  RETURN_IF_ERROR(PostReceive(context));
   
   struct rdma_conn_param cm_params;
   BuildParams(&cm_params);

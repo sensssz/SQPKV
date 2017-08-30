@@ -8,9 +8,10 @@ namespace sqpkv {
 
 class RDMAClient : public RDMAConnection {
 public:
-  RDMAClient(std::unique_ptr<RequestHandler> request_handler, int port, std::string hostname);
+  RDMAClient(RequestHandler *request_handler, std::string hostname, int port);
   Status Connect();
-
+  char *GetRemoteBuffer();
+  Status SendToServer(size_t size);
   void Disconnect();
 
 protected:

@@ -5,9 +5,12 @@
 namespace sqpkv {
 
 int ShardingPolicy::ExtractKey(const rocksdb::Slice &key) {
-  int id_start = 0;
-  while (key[id_start++] != '_') {
+  size_t id_start = 0;
+  while (id_start < key.size_ && key[id_start++] != '_') {
     // Left empty.
+  }
+  if (id_start == key.size_) {
+    return 0;
   }
   std::string id_string = std::string(key.data_ + id_start, key.size_ - id_start);
   return stoul(id_string);

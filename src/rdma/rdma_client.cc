@@ -4,8 +4,8 @@ namespace sqpkv {
 
   const int kTimeoutInMs = 500; /* ms */
 
-RDMAClient::RDMAClient(std::unique_ptr<RequestHandler> request_handler, int port, std::string hostname) :
-    RDMAConnection(std::move(request_handler)),
+RDMAClient::RDMAClient(RequestHandler *request_handler, std::string hostname, int port) :
+    RDMAConnection(request_handler),
     port_(port), hostname_(hostname), context_(nullptr), cm_id_(nullptr), event_channel_(nullptr) {}
 
 Status RDMAClient::Connect() {
@@ -21,6 +21,7 @@ Status RDMAClient::Connect() {
 
   freeaddrinfo(addr);
 
+  spdlog::get("console")->debug("Connecting to RDMA server...");
   while (rdma_get_cm_event(event_channel_, &event) == 0) {
     struct rdma_cm_event event_copy;
 
@@ -32,6 +33,15 @@ Status RDMAClient::Connect() {
       return Status::Ok();
     }
   }
+  return Status::Err();
+}
+
+char *RDMAClient::GetRemoteBuffer() {
+  return context_->send_region;
+}
+
+Status RDMAClient::SendToServer(size_t size) {
+  return PostSend(context_, size);
 }
 
 void RDMAClient::Disconnect() {
@@ -44,6 +54,7 @@ void RDMAClient::Disconnect() {
   memcpy(&event_copy, event, sizeof(*event));
   rdma_ack_cm_event(event);
   OnDisconnect(cm_id_);
+  rdma_destroy_event_channel(event_channel_);
 }
 
 Status RDMAClient::OnAddressResolved(struct rdma_cm_id *id) {

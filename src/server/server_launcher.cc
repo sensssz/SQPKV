@@ -1,7 +1,10 @@
 #include "server_launcher.h"
+#include "kv_request_handler.h"
 #include "kv_worker_factory.h"
 #include "server.h"
 #include "sharding_proxy_worker_factory.h"
+#include "rdma/rdma_server.h"
+#include "sqpkv/common.h"
 
 #include "gflags/gflags.h"
 #include "mpi.h"
@@ -151,7 +154,7 @@ void ServerLauncher::ShakeHands() {
 
 int ServerLauncher::GetInfinibandIp(char *host) {
   struct ifaddrs *ifaddr, *ifa;
-  int family, s, n;
+  int s, n;
 
   if (getifaddrs(&ifaddr) == -1) {
     spdlog::get("console")->debug("getifaddrs() error: {}}", strerror(errno));
@@ -229,9 +232,24 @@ Status ServerLauncher::ResolveIpAddresses() {
   return ip_address_resolution_success ? Status::Ok() : Status::Err();
 }
 
+void ServerLauncher::ExchangeRDMAPort(int port) {
+  if (world_rank_ == proxy_rank_) {
+    for (int shard_id = 1; shard_id < world_size_; shard_id++) {
+      int rank = id_to_rank[shard_id];
+      int port = -1;
+      MPI_Recv(&port, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      spdlog::get("console")->debug("Rank {} receives port {} from rank {}", proxy_rank_, port, rank);
+      32.push_back(port);
+    }
+  } else {
+    MPI_Send(&port, 1, MPI_INT, proxy_rank_, 0, MPI_COMM_WORLD);
+  }
+}
+
 int ServerLauncher::ProxyMain() {
+  ExchangeRDMAPort(0);
   auto worker_factory = std::unique_ptr<WorkerFactory>(
-    new sqpkv::ShardingProxyWorkerFactory(ip_addresses_, FLAGS_port));
+    new sqpkv::ShardingProxyWorkerFactory(ip_addresses_, ports_, FLAGS_port));
   sqpkv::Server *server = sqpkv::Server::GetInstance(std::move(worker_factory), FLAGS_port);
   server->Start();
 
@@ -239,9 +257,15 @@ int ServerLauncher::ProxyMain() {
 }
 
 int ServerLauncher::ShardMain() {
-  auto worker_factory = std::unique_ptr<WorkerFactory>(new sqpkv::KvWorkerFactory(db_));
-  sqpkv::Server *server = sqpkv::Server::GetInstance(std::move(worker_factory), FLAGS_port);
-  server->Start();
+  auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_)
+  sqpkv::RDMAServer server(request_handler.get());
+  server.Initialize();
+  int port = server.port();
+  ExchangeRDMAPort(port);
+  server.Run();
+  // auto worker_factory = std::unique_ptr<WorkerFactory>(new sqpkv::KvWorkerFactory(db_));
+  // sqpkv::Server *server = sqpkv::Server::GetInstance(std::move(worker_factory), FLAGS_port);
+  // server->Start();
   return 0;
 }
 

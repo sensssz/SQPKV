@@ -10,8 +10,8 @@ namespace sqpkv {
 class RequestHandler {
 public:
   virtual ~RequestHandler() {}
-  virtual StatusOr<size_t> HandleReadCompletion(const char *in_buffer, char *out_buffer) = 0;
-  virtual void HandleWriteCompletion(const char *buffer) = 0;
+  virtual StatusOr<size_t> HandleRecvCompletion(const char *in_buffer, char *out_buffer) = 0;
+  virtual void HandleSendCompletion(const char *buffer) = 0;
 };
 
 } // namespace sqpkv

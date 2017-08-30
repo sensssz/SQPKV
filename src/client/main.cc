@@ -4,12 +4,14 @@
 #include "spdlog/spdlog.h"
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <sstream>
 
 #include <cstdio>
 
+DEFINE_string(server_addr_file, "/tmp/sqpkv_proxy", "File containing the address of the proxy server");
 DEFINE_string(server_addr, "127.0.0.1", "Address of the server");
 DEFINE_int32(port, 4242, "Port number of the server");
 
@@ -78,7 +80,15 @@ int main(int argc, char *argv[]) {
   spdlog::set_pattern("[%H:%M:%S] %v");
   spdlog::set_level(spdlog::level::debug);
   auto console = spdlog::stdout_color_mt("console");
-  auto connection = sqpkv::Connection::ConnectTo(FLAGS_server_addr, FLAGS_port);
+  std::string server_addr;
+  std::ifstream addr_file(FLAGS_server_addr_file);
+  if (!addr_file.fail()) {
+    addr_file >> server_addr;
+    addr_file.close();
+  } else {
+    server_addr = FLAGS_server_addr;
+  }
+  auto connection = sqpkv::Connection::ConnectTo(server_addr, FLAGS_port);
 
   if (connection.err()) {
     spdlog::get("console")->error(connection.status().ToString());

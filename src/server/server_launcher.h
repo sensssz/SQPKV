@@ -21,6 +21,7 @@ private:
   void ShakeHands();
   int GetInfinibandIp(char *host);
   Status ResolveIpAddresses();
+  void ExchangeRDMAPort(int port);
   int ProxyMain();
   int ShardMain();
 
@@ -30,6 +31,7 @@ private:
   int proxy_rank_;
   rocksdb::DB *db_;
   std::vector<std::string> ip_addresses_;
+  std::vector<int> ports_;
   std::unordered_map<int, int> id_to_rank;
 };
 

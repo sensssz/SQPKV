@@ -16,7 +16,7 @@
 
 #include <netdb.h>
 #include <unistd.h>
-#include <rdma/rdma_cma.h>
+// #include <rdma/rdma_cma.h>
 
 namespace sqpkv {
 
@@ -63,19 +63,17 @@ public:
 
   bool connected;
 
-  char *local_buffer;
-  struct ibv_mr *rdma_local_mr;
-  char *remote_buffer;
-  struct ibv_mr *rdma_remote_mr;
-
-  struct ibv_mr peer_mr;
+  char *recv_region;
+  struct ibv_mr *recv_mr;
+  char *send_region;
+  struct ibv_mr *send_mr;
   
   std::thread cq_poller_thread;
 };
 
 class RDMAConnection {
 public:
-  RDMAConnection(std::unique_ptr<RequestHandler> request_handler);
+  RDMAConnection(RequestHandler *request_handler);
   virtual ~RDMAConnection() {}
 
 protected:
@@ -83,25 +81,23 @@ protected:
   virtual Status OnRouteResolved(struct rdma_cm_id *id) = 0;
   virtual Status OnConnectRequest(struct rdma_cm_id *id) = 0;
 
-  virtual void OnWorkCompletion(struct ibv_wc *wc);
   virtual Status OnConnection(struct rdma_cm_id *id);
   virtual Status OnDisconnect(struct rdma_cm_id *id);
+  
+    static void OnWorkCompletion(struct ibv_wc *wc, RequestHandler *request_handler);
+    static void PollCompletionQueue(Context *context, RequestHandler *request_handler);
+    static Status PostReceive(Context *context);
+    static Status PostSend(Context *context, size_t size);
 
   Status OnEvent(struct rdma_cm_event *event);
-  void PollCompletionQueue(Context *context);
+  
   StatusOr<Context> BuildContext(struct rdma_cm_id *id);
-  void BuildQueuePairAttr(Context *context, struct ibv_exp_qp_init_attr* attributes);
+  void BuildQueuePairAttr(Context *context, struct ibv_qp_init_attr* attributes);
   void BuildParams(struct rdma_conn_param *params);
   Status RegisterMemoryRegion(Context *context);
-  Status PostReceive(Context *context);
-  Status PostSend(Context *context, size_t size);
-  Status SendMr(void *context);
   void DestroyConnection(void *context);
 
-  bool terminate_;
-  bool mr_sent_;
-  bool mr_received_;
-  std::unique_ptr<RequestHandler> request_handler_;
+  RequestHandler *request_handler_;
 };
 
 } // namespace sqpkv

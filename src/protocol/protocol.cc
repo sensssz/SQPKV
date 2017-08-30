@@ -79,7 +79,7 @@ Status Protocol::ForwardPacket(int from, int to) {
       return Status::Eof();
     } else if (rc < 0) {
       return Status::Err();
-    } else if (rc < kMaxNetPacketSize) {
+    } else if (static_cast<size_t>(rc) < kMaxNetPacketSize) {
       end = true;
     }
     int bytes_read = rc;
@@ -113,7 +113,7 @@ Status Protocol::ReadWholePacket(int sock, std::vector<char> &buf) {
       buf.resize(original_size + rc);
       buf_len -= rc;
       spdlog::get("console")->debug("Read {} bytes from network", rc);
-      if (rc < kMaxNetPacketSize) {
+      if (static_cast<size_t>(rc) < kMaxNetPacketSize) {
         spdlog::get("console")->debug("Read {} bytes from network in total", buf.size());
         LogBinary(rocksdb::Slice(buf.data(), buf.size()));
         return Status::Ok();

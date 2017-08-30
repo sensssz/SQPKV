@@ -45,6 +45,7 @@ void Server::Start() {
   }
   listen(sock_fd_, 5);
 
+  spdlog::get("console")->debug("Listening on port {}", port_);
   while (Accept()) {
     // Accept more.
   }

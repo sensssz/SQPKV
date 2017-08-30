@@ -25,6 +25,10 @@ Packet::Packet(uint32_t payload_size, char *buf) :
     payload_size_(payload_size),
     // Temporarily assign the buf to the unique_ptr
     payload_(buf) {
+  if (buf == nullptr) {
+    char *payload = new char[payload_size_ + 4];
+    payload_.reset(payload);
+  }
   AddValue(payload_.get(), payload_size_);
 }
 
@@ -317,7 +321,6 @@ std::vector<rocksdb::Slice> GetAllResponsePacket::keys() {
 }
 
 void GetAllResponsePacket::AddKeys(std::vector<std::string> &keys) {
-  std::vector<std::string> keyStrings;
   for (auto &key : keys_) {
     keys.push_back(key.ToString());
   }

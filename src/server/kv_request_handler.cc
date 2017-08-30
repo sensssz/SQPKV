@@ -8,9 +8,9 @@ namespace sqpkv {
 
 KvRequestHandler::KvRequestHandler(rocksdb::DB *db) : db_(db) {}
 
-StatusOr<size_t> KvRequestHandler::HandleReadCompletion(const char *in_buffer, char *out_buffer) {
+StatusOr<size_t> KvRequestHandler::HandleRecvCompletion(const char *in_buffer, char *out_buffer) {
   auto packet = CommandPacketFactory::CreateCommandPacket(in_buffer);
-  auto size = make_unique<size_t>(0);
+  size_t size = 0;
   switch (packet->GetOp()) {
   case kGet:
     {
@@ -20,7 +20,9 @@ StatusOr<size_t> KvRequestHandler::HandleReadCompletion(const char *in_buffer, c
       auto get_status = db_->Get(rocksdb::ReadOptions(), key, &value);
       spdlog::get("console")->debug("Status is {}", get_status.ToString());
       GetResponsePacket get_resp(get_status, value, out_buffer);
-      *size = get_resp.ToBinary().size_;
+      auto data = get_resp.ToBinary();
+      assert(*(reinterpret_cast<uint32_t *>(data.data_)) + 4 == data.size_);
+      size = get_resp.ToBinary().size_;
     }
     break;
   case kPut:
@@ -31,7 +33,7 @@ StatusOr<size_t> KvRequestHandler::HandleReadCompletion(const char *in_buffer, c
       auto put_status = db_->Put(rocksdb::WriteOptions(), key, value);
       spdlog::get("console")->debug("Status is {}", put_status.ToString());
       PutResponsePacket put_resp(put_status, out_buffer);
-      *size = put_resp.ToBinary().size_;
+      size = put_resp.ToBinary().size_;
     }
     break;
   case kDelete:
@@ -41,7 +43,7 @@ StatusOr<size_t> KvRequestHandler::HandleReadCompletion(const char *in_buffer, c
       auto delete_status = db_->Delete(rocksdb::WriteOptions(), key);
       spdlog::get("console")->debug("Status is {}", delete_status.ToString());
       DeleteResponsePacket delete_resp(delete_status, out_buffer);
-      *size = delete_resp.ToBinary().size_;
+      size = delete_resp.ToBinary().size_;
     }
     break;
   case kGetAll:
@@ -55,15 +57,15 @@ StatusOr<size_t> KvRequestHandler::HandleReadCompletion(const char *in_buffer, c
         keys.push_back(iter->key().ToString());
       }
       GetAllResponsePacket get_all_resp(Status::Ok(), keys, out_buffer);
-      *size = get_all_resp.ToBinary().size_;
+      size = get_all_resp.ToBinary().size_;
     }
     break;
   default:
     break;
   }
-  return std::move(size);
+  return make_unique<size_t>(size);
 }
 
-void KvRequestHandler::HandleWriteCompletion(const char *buffer) {}
+void KvRequestHandler::HandleSendCompletion(const char *buffer) {}
 
 } // namespace sqpkv
