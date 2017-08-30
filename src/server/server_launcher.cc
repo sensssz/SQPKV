@@ -1,6 +1,5 @@
 #include "server_launcher.h"
 #include "kv_request_handler.h"
-#include "kv_worker_factory.h"
 #include "server.h"
 #include "sharding_proxy_worker_factory.h"
 #include "rdma/rdma_server.h"
