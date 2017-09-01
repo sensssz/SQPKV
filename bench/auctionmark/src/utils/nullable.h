@@ -9,7 +9,7 @@ template<typename T>
 class Nullable {
 public:
   Nullable() : null_(true) {}
-  Nullable(T val) : val_(val), null_(false) {}
+  Nullable(const T &val) : val_(val), null_(false) {}
 
   bool IsNull() {
     return null_;
