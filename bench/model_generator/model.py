@@ -76,7 +76,7 @@ class Model(object):
     '''
     definition = ('class %s {\n'
                   'public:\n'
-                  '  static %s &&FromJson(std::string json);\n'
+                  '  static %s FromJson(const std::string &json);\n'
                   '  std::string ToJson();\n'
                   '  std::string name() {\n'
                   '    return "%s";\n'
@@ -90,7 +90,7 @@ class Model(object):
   def __gen_fromjson_impl(self):
     '''Generate implementation of function FromJson.
     '''
-    impl = ('%s &&%s::FromJson(std::string json) {\n'
+    impl = ('%s %s::FromJson(const std::string &json) {\n'
             '  njson j = njson::parse(json);\n'
             '  %s model_instance;\n') %\
             (self.__class_name, self.__class_name, self.__class_name)
@@ -109,7 +109,7 @@ class Model(object):
         impl += ('  assert(j["%s"].is_%s());\n'
                  '  model_instance.%s = j["%s"].get<%s>();\n') %\
                  (mname, json_type, mname, mname, cpp_type)
-    impl += '  return std::move(model_instance);\n}'
+    impl += '  return model_instance;\n}'
     return impl
 
   def __gen_tostring__impl(self):
@@ -132,7 +132,7 @@ class Model(object):
                  '  }\n') %\
                  (mname, mname, mname, conversion, mname)
       else:
-        impl += '    j["%s"] = %s(%s);\n' % (mname, conversion, mname)
+        impl += '  j["%s"] = %s(%s);\n' % (mname, conversion, mname)
     impl += ('  return j.dump();\n'
              '}')
     return impl
