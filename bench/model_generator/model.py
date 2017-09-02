@@ -74,18 +74,51 @@ class Model(object):
   def __gen_definition(self):
     ''' Generate definition of this class.
     '''
+    max_type_len = max([len(x) for x in self.__member_cpp_types])
+    indention = ' ' * (2 + len(self.__class_name) + 1)
+    constructor = '%s(' % self.__class_name
+    i = 0
+    for mname, mtype in zip(self.__member_names, self.__member_cpp_types):
+      if i == 0:
+        constructor += ('%s' % mtype).ljust(max_type_len + 1) + mname + '_,\n'
+      else:
+        constructor += indention + ('%s' % mtype).ljust(max_type_len + 1) + mname + '_,\n'
+      i += 1
+    constructor = constructor[:-2] + ');'
+
     definition = ('class %s {\n'
                   'public:\n'
                   '  static %s FromJson(const std::string &json);\n'
-                  '  std::string ToJson();\n'
-                  '  std::string name() {\n'
+                  '  static std::string name() {\n'
                   '    return "%s";\n'
-                  '  }\n\n') %\
-                  (self.__class_name, self.__class_name, self.__class_name)
-    max_type_len = max([len(x) for x in self.__member_cpp_types])
+                  '  }\n\n'
+                  '  %s() = default;\n'
+                  '  %s\n'
+                  '  std::string ToJson();\n'
+                  '  \n\n') %\
+                  (self.__class_name, self.__class_name, self.__class_name, self.__class_name, constructor)
     for mname, mtype in zip(self.__member_names, self.__member_cpp_types):
       definition += ('  %s' % mtype).ljust(max_type_len + 6) + mname + ';\n'
     return definition + '};'
+
+  def __gen_constructor_impl(self):
+    ''' Generate constructor implementation.
+    '''
+    max_type_len = max([len(x) for x in self.__member_cpp_types])
+    indention = ' ' * (len(self.__class_name) * 2 + 2 + 1)
+    constructor = '%s::%s(' % (self.__class_name, self.__class_name)
+    i = 0
+    for mname, mtype in zip(self.__member_names, self.__member_cpp_types):
+      if i == 0:
+        constructor += ('%s' % mtype).ljust(max_type_len + 1) + mname + '_,\n'
+      else:
+        constructor += indention + ('%s' % mtype).ljust(max_type_len + 1) + mname + '_,\n'
+      i += 1
+    constructor = constructor[:-2] + ') :\n'
+    for mname in self.__member_names:
+      constructor += '  %s(%s_),\n' % (mname, mname)
+    constructor = constructor[:-2] + ' {}'
+    return constructor
 
   def __gen_fromjson_impl(self):
     '''Generate implementation of function FromJson.
@@ -100,16 +133,20 @@ class Model(object):
       cpp_type = self.__member_cpp_types[i]
       if self.__type_nullable[i]:
         cpp_type = cpp_type[len('Nullable<'):-1]
+        if 'time' in cpp_type:
+          conversion = 'StrfTime'
+        else:
+          conversion = ''
         impl += ('  assert(j["%s"].is_%s() || j["%s"].is_null());\n'
                  '  if (!j["%s"].is_null()) {\n'
-                 '    model_instance.%s = j["%s"].get<%s>();\n'
+                 '    model_instance.%s = %s(j["%s"].get<%s>());\n'
                  '  }\n') %\
-                 (mname, json_type, mname, mname, mname, mname, cpp_type)
+                 (mname, json_type, mname, mname, mname, conversion, mname, cpp_type)
       else:
         impl += ('  assert(j["%s"].is_%s());\n'
-                 '  model_instance.%s = j["%s"].get<%s>();\n') %\
-                 (mname, json_type, mname, mname, cpp_type)
-    impl += '  return model_instance;\n}'
+                 '  model_instance.%s = %s(j["%s"].get<%s>());\n') %\
+                 (mname, json_type, mname, conversion, mname, cpp_type)
+    impl += '  return std::move(model_instance);\n}'
     return impl
 
   def __gen_tostring__impl(self):
@@ -133,7 +170,7 @@ class Model(object):
                  (mname, mname, mname, conversion, mname)
       else:
         impl += '  j["%s"] = %s(%s);\n' % (mname, conversion, mname)
-    impl += ('  return j.dump();\n'
+    impl += ('  return std::move(j.dump());\n'
              '}')
     return impl
 
@@ -141,6 +178,8 @@ class Model(object):
     ''' Generate implementation of the class.
     '''
     impls = 'using njson = nlohmann::json;\n\n'
+    impls += self.__gen_constructor_impl()
+    impls += '\n\n'
     impls += self.__gen_fromjson_impl()
     impls += '\n\n'
     impls += self.__gen_tostring__impl()

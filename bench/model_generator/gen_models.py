@@ -54,7 +54,7 @@ def parse_models():
       member_names = []
       member_types = []
       type_nullable = []
-    elif in_model and ' KEY ' not in line:
+    elif in_model and ' KEY ' not in line and 'CHECK' not in line:
       member_info = line.split()
       member_names.append(member_info[0])
       if 'VARCHAR' in member_info[1]:
