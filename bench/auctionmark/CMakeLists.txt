@@ -31,8 +31,10 @@ set(UTILS_SRC
   src/utils/utils.cc
   src/utils/zipf.cc)
 
-add_library(utils UTILS_SRC)
+add_library(utils SHARED
+  ${UTILS_SRC})
 
 add_executable(auctionmark_loader ${LOADER_SRC})
 target_link_libraries(auctionmark_loader
+  utils
   sqpkv_connector)
