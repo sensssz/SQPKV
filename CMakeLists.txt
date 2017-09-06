@@ -25,6 +25,8 @@ find_package( Zstd REQUIRED )
 find_package( gflags REQUIRED )
 find_package( rdma REQUIRED )
 
+add_subdirectory(bench/auctionmark)
+
 set(RDMA_SRCS
     src/rdma/rdma_connection.cc
     src/rdma/rdma_client.cc
@@ -124,3 +126,4 @@ install(FILES ${CONNECTOR_HEADERS} DESTINATION include/sqpkv/)
 install(TARGETS sqpkv_connector DESTINATION lib/)
 install(TARGETS sqpkv_server DESTINATION bin/)
 install(TARGETS sqpkv_client DESTINATION bin/)
+install(TARGETS auctionmark_loader DESTINATION bin/)

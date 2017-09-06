@@ -4,7 +4,8 @@
 class Model(object):
   ''' Represents a model
   '''
-  _header_includes = ['"utils/nullable.h"', '<string>', '<cstdint>', '<ctime>']
+  _header_includes = ['"auctionmark_constants.h"', '"utils/nullable.h"',\
+                      '<string>', '<cstdint>', '<ctime>']
   _impl_includes = ['"utils/utils.h"', '"json.h"', '<cassert>']
   _cpp_type_map = {'FLOAT': 'double',
                    'TIMESTAMP': 'std::time_t',
@@ -90,7 +91,7 @@ class Model(object):
                   'public:\n'
                   '  static %s FromJson(const std::string &json);\n'
                   '  static std::string name() {\n'
-                  '    return "%s";\n'
+                  '    return kTableName%s;\n'
                   '  }\n\n'
                   '  %s() = default;\n'
                   '  %s\n'
@@ -99,6 +100,7 @@ class Model(object):
                   (self.__class_name, self.__class_name, self.__class_name, self.__class_name, constructor)
     for mname, mtype in zip(self.__member_names, self.__member_cpp_types):
       definition += ('  %s' % mtype).ljust(max_type_len + 6) + mname + ';\n'
+    # print 'const std::string kTableName%s = "%s";' % (self.__class_name, self.__name)
     return definition + '};'
 
   def __gen_constructor_impl(self):
