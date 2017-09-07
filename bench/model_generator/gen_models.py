@@ -5,6 +5,7 @@
 
 import os
 import sys
+from subprocess import call
 
 import gflags
 
@@ -33,6 +34,13 @@ def remove_comma(string):
   else:
     return string
 
+def extract_varchar_capacity(line):
+  ''' Extract the capacity of VARCHARs
+  '''
+  left_i = line.index('(')
+  right_i = line.index(')', left_i + 1)
+  return line[left_i + 1 : right_i]
+
 def parse_models():
   ''' Parse the file and generate models objects from it.
   '''
@@ -43,25 +51,30 @@ def parse_models():
   member_names = []
   member_types = []
   type_nullable = []
+  str_caps = []
   for line in model_file:
     if 'CREATE TABLE' in line:
       model_name = line.split()[2]
       in_model = True
     elif ');' in line and len(model_name) > 0:
-      models.append(Model(model_name, FLAGS.namespace, member_names, member_types, type_nullable))
+      models.append(Model(model_name, FLAGS.namespace, member_names,\
+                          member_types, type_nullable, str_caps))
       in_model = False
       model_name = ''
       member_names = []
       member_types = []
       type_nullable = []
+      str_caps = []
     elif in_model and ' KEY ' not in line and 'CHECK' not in line:
       member_info = line.split()
       member_names.append(member_info[0])
       if 'VARCHAR' in member_info[1]:
         member_types.append('VARCHAR')
+        str_caps.append(extract_varchar_capacity(member_info[1]))
       else:
         member_types.append(remove_comma(member_info[1]))
-      type_nullable.append('NOT NULL' in line)
+        str_caps.append(None)
+      type_nullable.append('NOT NULL' not in line)
   return models
 
 def create_if_not_exists(dirname):
@@ -89,6 +102,19 @@ def gen_model_files(models):
     impl_file.write(model.gen_impl_content())
     impl_file.close()
 
+def apply_patches():
+  ''' Apply patch files (if any).
+  '''
+  models_dir = FLAGS.models_dir
+  models_dir = os.path.abspath(models_dir) + '/'
+  script_path = os.path.dirname(os.path.realpath(__file__))
+  patch_dir = script_path + '/patches/'
+  for filename in os.listdir(patch_dir):
+    if not filename.endswith('.patch'):
+      continue
+    src_filename = filename[:-len('.patch')]
+    call(['patch', models_dir + src_filename, patch_dir + filename])
+
 def main(argv):
   ''' Main function.
   '''
@@ -105,6 +131,7 @@ def main(argv):
 
   models = parse_models()
   gen_model_files(models)
+  apply_patches()
 
 if __name__ == '__main__':
   main(sys.argv)

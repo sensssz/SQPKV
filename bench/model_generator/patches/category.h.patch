@@ -1,0 +1,21 @@
+--- ../auctionmark/src/models/category.h	2017-09-07 16:18:49.000000000 -0400
++++ /Users/sens/Downloads/category.h	2017-09-07 16:19:13.000000000 -0400
+@@ -21,13 +21,17 @@
+   Category();
+   Category(uint64_t              c_id_,
+            Nullable<std::string> c_name_,
+-           Nullable<uint64_t>    c_parent_id_);
++           Nullable<uint64_t>    c_parent_id_,
++           uint64_t              item_count_,
++           bool                  is_leaf_);
+   std::string ToJson();
+   
+ 
+   uint64_t                 c_id;
+   Nullable<std::string>    c_name;
+   Nullable<uint64_t>       c_parent_id;
++  uint64_t                 item_count;
++  bool                     is_leaf;
+ };
+ 
+ } // namespace auctionmark

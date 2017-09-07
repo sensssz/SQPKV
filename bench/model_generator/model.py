@@ -22,12 +22,13 @@ class Model(object):
                     'INTEGER':    'number',
                     'TINYINT':    'number'}
 
-  def __init__(self, name, namespace, member_names, member_types, type_nullable):
+  def __init__(self, name, namespace, member_names, member_types, type_nullable, str_caps):
     self.__name = name
     self.__namespace = namespace
     self.__member_names = member_names
     self.__member_json_types = [Model._json_type_map[x] for x in member_types]
     self.__type_nullable = type_nullable
+    self.__str_caps = str_caps
 
     self.__member_cpp_types = []
     for i in range(0, len(member_types)):
@@ -93,7 +94,7 @@ class Model(object):
                   '  static std::string name() {\n'
                   '    return kTableName%s;\n'
                   '  }\n\n'
-                  '  %s() = default;\n'
+                  '  %s();\n'
                   '  %s\n'
                   '  std::string ToJson();\n'
                   '  \n\n') %\
@@ -103,12 +104,33 @@ class Model(object):
     # print 'const std::string kTableName%s = "%s";' % (self.__class_name, self.__name)
     return definition + '};'
 
+  def __gen_str_init(self):
+    ''' Generate statements initializing string attributes with empty string.
+    '''
+    statements = ''
+    for i in range(len(self.__member_names)):
+      if 'std::string' not in self.__member_cpp_types[i]:
+        continue
+      mname = self.__member_names[i]
+      capacity = self.__str_caps[i]
+      nullable = self.__type_nullable[i]
+      if nullable:
+        statements += ('  %s = "";\n'
+                       '  %s->reserve(%s);\n') % (mname, mname, capacity)
+      else:
+        statements += '  %s.reserve(%s);\n' % (mname, capacity)
+    return statements
+
   def __gen_constructor_impl(self):
     ''' Generate constructor implementation.
     '''
+    constructor = '%s::%s() {\n' % (self.__class_name, self.__class_name)
+    constructor += self.__gen_str_init()
+    constructor += '}\n\n'
+
     max_type_len = max([len(x) for x in self.__member_cpp_types])
     indention = ' ' * (len(self.__class_name) * 2 + 2 + 1)
-    constructor = '%s::%s(' % (self.__class_name, self.__class_name)
+    constructor += '%s::%s(' % (self.__class_name, self.__class_name)
     i = 0
     for mname, mtype in zip(self.__member_names, self.__member_cpp_types):
       if i == 0:
@@ -118,7 +140,7 @@ class Model(object):
       i += 1
     constructor = constructor[:-2] + ') :\n'
     for mname in self.__member_names:
-      constructor += '  %s(%s_),\n' % (mname, mname)
+      constructor += '    %s(%s_),\n' % (mname, mname)
     constructor = constructor[:-2] + ' {}'
     return constructor
 
@@ -133,12 +155,14 @@ class Model(object):
       mname = self.__member_names[i]
       json_type = self.__member_json_types[i]
       cpp_type = self.__member_cpp_types[i]
+      if 'time' in cpp_type:
+        conversion = 'StrfTime'
+        cpp_type = 'std::string'
+      else:
+        conversion = ''
       if self.__type_nullable[i]:
-        cpp_type = cpp_type[len('Nullable<'):-1]
-        if 'time' in cpp_type:
-          conversion = 'StrfTime'
-        else:
-          conversion = ''
+        if 'Nullable' in cpp_type:
+          cpp_type = cpp_type[len('Nullable<'):-1]
         impl += ('  assert(j["%s"].is_%s() || j["%s"].is_null());\n'
                  '  if (!j["%s"].is_null()) {\n'
                  '    model_instance.%s = %s(j["%s"].get<%s>());\n'
@@ -159,11 +183,11 @@ class Model(object):
     for i in range(0, len(self.__member_names)):
       mname = self.__member_names[i]
       cpp_type = self.__member_cpp_types[i]
+      if 'time' in cpp_type:
+        conversion = 'TimeToString'
+      else:
+        conversion = ''
       if self.__type_nullable[i]:
-        if 'time' in cpp_type:
-          conversion = 'TimeToString'
-        else:
-          conversion = ''
         impl += ('  if (%s.IsNull()) {\n'
                  '    j["%s"] = nullptr;\n'
                  '  } else {\n'
