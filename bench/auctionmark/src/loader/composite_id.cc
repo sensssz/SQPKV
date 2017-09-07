@@ -1,12 +1,14 @@
 #include "composite_id.h"
 
+#include <cstddef>
+
 namespace auctionmark {
 
-bool CompositeId::operator<(const CompositeId &other) {
+bool CompositeId::operator<(const CompositeId &other) const {
   return hash_code_ < other.hash_code_;
 }
 
-bool CompositeId::operator<(const CompositeId &other) {
+bool CompositeId::operator==(const CompositeId &other) const {
   return hash_code_ == other.hash_code_;
 }
 
@@ -26,10 +28,10 @@ uint64_t CompositeId::Encode(
   uint64_t id = 0;
   uint64_t offset = 0;
   for (size_t i = 0; i < values.size(); ++i) {
-    uint64_t max_value = offset_bis[i];
     id = (i == 0) ? values[i] : id | values[i] << offset;
   }
   hash_code_ = id ^ (id >> 32);
+  return id;
 }
 
 std::vector<uint64_t> CompositeId::Decode(

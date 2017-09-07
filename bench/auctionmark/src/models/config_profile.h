@@ -18,18 +18,18 @@ public:
     return kTableNameConfigProfile;
   }
 
-  ConfigProfile() = default;
-  ConfigProfile(Nullable<double>      cfp_scale_factor_,
-                Nullable<std::time_t> cfp_loader_start_,
-                Nullable<std::time_t> cfp_loader_stop_,
-                Nullable<std::string> cfp_user_item_histogram_);
+  ConfigProfile();
+  ConfigProfile(double      cfp_scale_factor_,
+                std::time_t cfp_loader_start_,
+                std::time_t cfp_loader_stop_,
+                std::string cfp_user_item_histogram_);
   std::string ToJson();
   
 
-  Nullable<double>         cfp_scale_factor;
-  Nullable<std::time_t>    cfp_loader_start;
-  Nullable<std::time_t>    cfp_loader_stop;
-  Nullable<std::string>    cfp_user_item_histogram;
+  double         cfp_scale_factor;
+  std::time_t    cfp_loader_start;
+  std::time_t    cfp_loader_stop;
+  std::string    cfp_user_item_histogram;
 };
 
 } // namespace auctionmark

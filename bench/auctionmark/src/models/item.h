@@ -18,60 +18,60 @@ public:
     return kTableNameItem;
   }
 
-  Item() = default;
-  Item(Nullable<uint64_t> i_id_,
-       Nullable<uint64_t> i_u_id_,
-       Nullable<uint64_t> i_c_id_,
-       std::string        i_name_,
-       std::string        i_description_,
-       std::string        i_user_attributes_,
-       Nullable<double>   i_initial_price_,
-       Nullable<double>   i_current_price_,
-       uint64_t           i_num_bids_,
-       uint64_t           i_num_images_,
-       uint64_t           i_num_global_attrs_,
-       uint64_t           i_num_comments_,
-       std::time_t        i_start_date_,
-       std::time_t        i_end_date_,
-       int                i_status_,
-       std::time_t        i_created_,
-       std::time_t        i_updated_,
-       uint64_t           i_iattr0_,
-       uint64_t           i_iattr1_,
-       uint64_t           i_iattr2_,
-       uint64_t           i_iattr3_,
-       uint64_t           i_iattr4_,
-       uint64_t           i_iattr5_,
-       uint64_t           i_iattr6_,
-       uint64_t           i_iattr7_);
+  Item();
+  Item(uint64_t              i_id_,
+       uint64_t              i_u_id_,
+       uint64_t              i_c_id_,
+       Nullable<std::string> i_name_,
+       Nullable<std::string> i_description_,
+       Nullable<std::string> i_user_attributes_,
+       double                i_initial_price_,
+       double                i_current_price_,
+       Nullable<uint64_t>    i_num_bids_,
+       Nullable<uint64_t>    i_num_images_,
+       Nullable<uint64_t>    i_num_global_attrs_,
+       Nullable<uint64_t>    i_num_comments_,
+       Nullable<std::time_t> i_start_date_,
+       Nullable<std::time_t> i_end_date_,
+       Nullable<int>         i_status_,
+       Nullable<std::time_t> i_created_,
+       Nullable<std::time_t> i_updated_,
+       Nullable<uint64_t>    i_iattr0_,
+       Nullable<uint64_t>    i_iattr1_,
+       Nullable<uint64_t>    i_iattr2_,
+       Nullable<uint64_t>    i_iattr3_,
+       Nullable<uint64_t>    i_iattr4_,
+       Nullable<uint64_t>    i_iattr5_,
+       Nullable<uint64_t>    i_iattr6_,
+       Nullable<uint64_t>    i_iattr7_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    i_id;
-  Nullable<uint64_t>    i_u_id;
-  Nullable<uint64_t>    i_c_id;
-  std::string           i_name;
-  std::string           i_description;
-  std::string           i_user_attributes;
-  Nullable<double>      i_initial_price;
-  Nullable<double>      i_current_price;
-  uint64_t              i_num_bids;
-  uint64_t              i_num_images;
-  uint64_t              i_num_global_attrs;
-  uint64_t              i_num_comments;
-  std::time_t           i_start_date;
-  std::time_t           i_end_date;
-  int                   i_status;
-  std::time_t           i_created;
-  std::time_t           i_updated;
-  uint64_t              i_iattr0;
-  uint64_t              i_iattr1;
-  uint64_t              i_iattr2;
-  uint64_t              i_iattr3;
-  uint64_t              i_iattr4;
-  uint64_t              i_iattr5;
-  uint64_t              i_iattr6;
-  uint64_t              i_iattr7;
+  uint64_t                 i_id;
+  uint64_t                 i_u_id;
+  uint64_t                 i_c_id;
+  Nullable<std::string>    i_name;
+  Nullable<std::string>    i_description;
+  Nullable<std::string>    i_user_attributes;
+  double                   i_initial_price;
+  double                   i_current_price;
+  Nullable<uint64_t>       i_num_bids;
+  Nullable<uint64_t>       i_num_images;
+  Nullable<uint64_t>       i_num_global_attrs;
+  Nullable<uint64_t>       i_num_comments;
+  Nullable<std::time_t>    i_start_date;
+  Nullable<std::time_t>    i_end_date;
+  Nullable<int>            i_status;
+  Nullable<std::time_t>    i_created;
+  Nullable<std::time_t>    i_updated;
+  Nullable<uint64_t>       i_iattr0;
+  Nullable<uint64_t>       i_iattr1;
+  Nullable<uint64_t>       i_iattr2;
+  Nullable<uint64_t>       i_iattr3;
+  Nullable<uint64_t>       i_iattr4;
+  Nullable<uint64_t>       i_iattr5;
+  Nullable<uint64_t>       i_iattr6;
+  Nullable<uint64_t>       i_iattr7;
 };
 
 } // namespace auctionmark

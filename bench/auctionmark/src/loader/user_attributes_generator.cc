@@ -12,7 +12,7 @@ UserAttributesGenerator::UserAttributesGenerator(sqpkv::Connection *connection, 
 void UserAttributesGenerator::Prepare() {
   table_size_ = 0;
   Zipf<uint64_t> random_num_user_attributes(
-    kUserMinAttributes, kUserMaxAttributes, kSigma, profile_->rng);
+    kUserMinAttributes, kUserMaxAttributes, kSigma, &profile_->rng);
   for (auto &user_id : profile_->user_ids) {
     uint64_t num_attributes = random_num_user_attributes.RandomNumber();
     id_num_attributes_.push_back(

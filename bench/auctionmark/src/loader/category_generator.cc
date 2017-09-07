@@ -20,7 +20,7 @@ void CategoryGenerator::Init() {
 void CategoryGenerator::PopulateRow(std::string &key, std::string &value) {
   auto category = categories_.front();
   categories_.pop_front();
-  key = category->c_id.ToString();
+  key = std::to_string(category->c_id);
   value = category->ToJson();
 }
 

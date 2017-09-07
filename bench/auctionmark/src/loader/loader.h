@@ -16,7 +16,7 @@ public:
 
 private:
   sqpkv::Connection *connection_;
-  std::unique_ptr<AuctionmarkPrifile> profile_;
+  std::unique_ptr<AuctionmarkProfile> profile_;
 };
 
 } // namespace auctionmark

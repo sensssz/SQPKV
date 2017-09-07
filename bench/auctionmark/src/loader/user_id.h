@@ -9,6 +9,7 @@ namespace auctionmark {
 
 class UserId : public CompositeId {
 public:
+  UserId() = default;
   UserId(uint64_t item_count, uint64_t offset);
   UserId(uint64_t composite_id);
   virtual uint64_t Encode() override;

@@ -8,7 +8,9 @@
 namespace auctionmark {
 
 TableGenerator::TableGenerator(sqpkv::Connection *connection, AuctionmarkProfile *profile) :
-    count_(0), table_size_(0), connection_(connection), profile_(profile) {
+    count_(0), table_size_(0), connection_(connection), profile_(profile) {}
+
+void TableGenerator::InitTableSize() {
   bool fixed_size = kFixedTables.find(name()) != kFixedTables.end();
   bool dynamic_size = kDynamicTables.find(name()) != kDynamicTables.end();
   bool data_file = kDataFiles.find(name()) != kDataFiles.end();
@@ -22,6 +24,7 @@ TableGenerator::TableGenerator(sqpkv::Connection *connection, AuctionmarkProfile
 }
 
 sqpkv::Status TableGenerator::PopulateTable() {
+  InitTableSize();
   Init();
   Prepare();
   while (HasMore()) {

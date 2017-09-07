@@ -25,7 +25,7 @@ void GlobalAttributeValueGenerator::PopulateRow(std::string &key, std::string &v
   if (gav_counter_ == -1) {
     gag_current_ = profile_->gag_ids.begin();
     gav_counter_ = 0;
-  } else if (++gav_counter_ == gag_current_->count()) {
+  } else if (static_cast<uint64_t>(++gav_counter_) == gag_current_->count()) {
     gag_current_++;
     gav_counter_ = 0;
   }

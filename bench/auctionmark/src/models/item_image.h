@@ -18,18 +18,18 @@ public:
     return kTableNameItemImage;
   }
 
-  ItemImage() = default;
-  ItemImage(Nullable<uint64_t>    ii_id_,
-            Nullable<uint64_t>    ii_i_id_,
-            Nullable<uint64_t>    ii_u_id_,
-            Nullable<std::string> ii_sattr0_);
+  ItemImage();
+  ItemImage(uint64_t    ii_id_,
+            uint64_t    ii_i_id_,
+            uint64_t    ii_u_id_,
+            std::string ii_sattr0_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>       ii_id;
-  Nullable<uint64_t>       ii_i_id;
-  Nullable<uint64_t>       ii_u_id;
-  Nullable<std::string>    ii_sattr0;
+  uint64_t       ii_id;
+  uint64_t       ii_i_id;
+  uint64_t       ii_u_id;
+  std::string    ii_sattr0;
 };
 
 } // namespace auctionmark

@@ -18,14 +18,14 @@ public:
     return kTableNameRegion;
   }
 
-  Region() = default;
-  Region(Nullable<uint64_t> r_id_,
-         std::string        r_name_);
+  Region();
+  Region(uint64_t              r_id_,
+         Nullable<std::string> r_name_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    r_id;
-  std::string           r_name;
+  uint64_t                 r_id;
+  Nullable<std::string>    r_name;
 };
 
 } // namespace auctionmark

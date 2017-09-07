@@ -9,7 +9,7 @@ RegionGenerator::RegionGenerator(
 void RegionGenerator::PopulateRow(std::string &key, std::string &value) {
   key = std::to_string(count_);
   std::string name = profile_->random_generator.RandomString(6, 32);
-  value = Region{Nullable<uint64_t>(count_), name}.ToJson();
+  value = Region{count_, name}.ToJson();
 }
 
 } // namespace auctionmark

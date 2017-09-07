@@ -5,7 +5,7 @@
 
 namespace auctionmark {
 
-class GlobalAttributeGroupId : CompositeId {
+class GlobalAttributeGroupId : public CompositeId {
 public:
   GlobalAttributeGroupId(uint64_t category_id, uint64_t id, uint64_t count);
   GlobalAttributeGroupId(uint64_t composite_id);

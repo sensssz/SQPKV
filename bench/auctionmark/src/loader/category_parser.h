@@ -12,7 +12,7 @@ namespace auctionmark {
 class CategoryParser {
 public:
   CategoryParser(const std::string &filename);
-  bool Parse();
+  void Parse();
   std::unordered_map<std::string, std::unique_ptr<Category>> &categories() {
     return categories_;
   }

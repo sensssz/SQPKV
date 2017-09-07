@@ -9,171 +9,270 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-Item::Item(Nullable<uint64_t> i_id_,
-           Nullable<uint64_t> i_u_id_,
-           Nullable<uint64_t> i_c_id_,
-           std::string        i_name_,
-           std::string        i_description_,
-           std::string        i_user_attributes_,
-           Nullable<double>   i_initial_price_,
-           Nullable<double>   i_current_price_,
-           uint64_t           i_num_bids_,
-           uint64_t           i_num_images_,
-           uint64_t           i_num_global_attrs_,
-           uint64_t           i_num_comments_,
-           std::time_t        i_start_date_,
-           std::time_t        i_end_date_,
-           int                i_status_,
-           std::time_t        i_created_,
-           std::time_t        i_updated_,
-           uint64_t           i_iattr0_,
-           uint64_t           i_iattr1_,
-           uint64_t           i_iattr2_,
-           uint64_t           i_iattr3_,
-           uint64_t           i_iattr4_,
-           uint64_t           i_iattr5_,
-           uint64_t           i_iattr6_,
-           uint64_t           i_iattr7_) :
-  i_id(i_id_),
-  i_u_id(i_u_id_),
-  i_c_id(i_c_id_),
-  i_name(i_name_),
-  i_description(i_description_),
-  i_user_attributes(i_user_attributes_),
-  i_initial_price(i_initial_price_),
-  i_current_price(i_current_price_),
-  i_num_bids(i_num_bids_),
-  i_num_images(i_num_images_),
-  i_num_global_attrs(i_num_global_attrs_),
-  i_num_comments(i_num_comments_),
-  i_start_date(i_start_date_),
-  i_end_date(i_end_date_),
-  i_status(i_status_),
-  i_created(i_created_),
-  i_updated(i_updated_),
-  i_iattr0(i_iattr0_),
-  i_iattr1(i_iattr1_),
-  i_iattr2(i_iattr2_),
-  i_iattr3(i_iattr3_),
-  i_iattr4(i_iattr4_),
-  i_iattr5(i_iattr5_),
-  i_iattr6(i_iattr6_),
-  i_iattr7(i_iattr7_) {}
+Item::Item() {
+  i_name = "";
+  i_name->reserve(100);
+  i_description = "";
+  i_description->reserve(1024);
+  i_user_attributes = "";
+  i_user_attributes->reserve(255);
+}
+
+Item::Item(uint64_t              i_id_,
+           uint64_t              i_u_id_,
+           uint64_t              i_c_id_,
+           Nullable<std::string> i_name_,
+           Nullable<std::string> i_description_,
+           Nullable<std::string> i_user_attributes_,
+           double                i_initial_price_,
+           double                i_current_price_,
+           Nullable<uint64_t>    i_num_bids_,
+           Nullable<uint64_t>    i_num_images_,
+           Nullable<uint64_t>    i_num_global_attrs_,
+           Nullable<uint64_t>    i_num_comments_,
+           Nullable<std::time_t> i_start_date_,
+           Nullable<std::time_t> i_end_date_,
+           Nullable<int>         i_status_,
+           Nullable<std::time_t> i_created_,
+           Nullable<std::time_t> i_updated_,
+           Nullable<uint64_t>    i_iattr0_,
+           Nullable<uint64_t>    i_iattr1_,
+           Nullable<uint64_t>    i_iattr2_,
+           Nullable<uint64_t>    i_iattr3_,
+           Nullable<uint64_t>    i_iattr4_,
+           Nullable<uint64_t>    i_iattr5_,
+           Nullable<uint64_t>    i_iattr6_,
+           Nullable<uint64_t>    i_iattr7_) :
+    i_id(i_id_),
+    i_u_id(i_u_id_),
+    i_c_id(i_c_id_),
+    i_name(i_name_),
+    i_description(i_description_),
+    i_user_attributes(i_user_attributes_),
+    i_initial_price(i_initial_price_),
+    i_current_price(i_current_price_),
+    i_num_bids(i_num_bids_),
+    i_num_images(i_num_images_),
+    i_num_global_attrs(i_num_global_attrs_),
+    i_num_comments(i_num_comments_),
+    i_start_date(i_start_date_),
+    i_end_date(i_end_date_),
+    i_status(i_status_),
+    i_created(i_created_),
+    i_updated(i_updated_),
+    i_iattr0(i_iattr0_),
+    i_iattr1(i_iattr1_),
+    i_iattr2(i_iattr2_),
+    i_iattr3(i_iattr3_),
+    i_iattr4(i_iattr4_),
+    i_iattr5(i_iattr5_),
+    i_iattr6(i_iattr6_),
+    i_iattr7(i_iattr7_) {}
 
 Item Item::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   Item model_instance;
-  assert(j["i_id"].is_number() || j["i_id"].is_null());
-  if (!j["i_id"].is_null()) {
-    model_instance.i_id = (j["i_id"].get<uint64_t>());
+  assert(j["i_id"].is_number());
+  model_instance.i_id = (j["i_id"].get<uint64_t>());
+  assert(j["i_u_id"].is_number());
+  model_instance.i_u_id = (j["i_u_id"].get<uint64_t>());
+  assert(j["i_c_id"].is_number());
+  model_instance.i_c_id = (j["i_c_id"].get<uint64_t>());
+  assert(j["i_name"].is_string() || j["i_name"].is_null());
+  if (!j["i_name"].is_null()) {
+    model_instance.i_name = (j["i_name"].get<std::string>());
   }
-  assert(j["i_u_id"].is_number() || j["i_u_id"].is_null());
-  if (!j["i_u_id"].is_null()) {
-    model_instance.i_u_id = (j["i_u_id"].get<uint64_t>());
+  assert(j["i_description"].is_string() || j["i_description"].is_null());
+  if (!j["i_description"].is_null()) {
+    model_instance.i_description = (j["i_description"].get<std::string>());
   }
-  assert(j["i_c_id"].is_number() || j["i_c_id"].is_null());
-  if (!j["i_c_id"].is_null()) {
-    model_instance.i_c_id = (j["i_c_id"].get<uint64_t>());
+  assert(j["i_user_attributes"].is_string() || j["i_user_attributes"].is_null());
+  if (!j["i_user_attributes"].is_null()) {
+    model_instance.i_user_attributes = (j["i_user_attributes"].get<std::string>());
   }
-  assert(j["i_name"].is_string());
-  model_instance.i_name = (j["i_name"].get<std::string>());
-  assert(j["i_description"].is_string());
-  model_instance.i_description = (j["i_description"].get<std::string>());
-  assert(j["i_user_attributes"].is_string());
-  model_instance.i_user_attributes = (j["i_user_attributes"].get<std::string>());
-  assert(j["i_initial_price"].is_number() || j["i_initial_price"].is_null());
-  if (!j["i_initial_price"].is_null()) {
-    model_instance.i_initial_price = (j["i_initial_price"].get<double>());
+  assert(j["i_initial_price"].is_number());
+  model_instance.i_initial_price = (j["i_initial_price"].get<double>());
+  assert(j["i_current_price"].is_number());
+  model_instance.i_current_price = (j["i_current_price"].get<double>());
+  assert(j["i_num_bids"].is_number() || j["i_num_bids"].is_null());
+  if (!j["i_num_bids"].is_null()) {
+    model_instance.i_num_bids = (j["i_num_bids"].get<uint64_t>());
   }
-  assert(j["i_current_price"].is_number() || j["i_current_price"].is_null());
-  if (!j["i_current_price"].is_null()) {
-    model_instance.i_current_price = (j["i_current_price"].get<double>());
+  assert(j["i_num_images"].is_number() || j["i_num_images"].is_null());
+  if (!j["i_num_images"].is_null()) {
+    model_instance.i_num_images = (j["i_num_images"].get<uint64_t>());
   }
-  assert(j["i_num_bids"].is_number());
-  model_instance.i_num_bids = (j["i_num_bids"].get<uint64_t>());
-  assert(j["i_num_images"].is_number());
-  model_instance.i_num_images = (j["i_num_images"].get<uint64_t>());
-  assert(j["i_num_global_attrs"].is_number());
-  model_instance.i_num_global_attrs = (j["i_num_global_attrs"].get<uint64_t>());
-  assert(j["i_num_comments"].is_number());
-  model_instance.i_num_comments = (j["i_num_comments"].get<uint64_t>());
-  assert(j["i_start_date"].is_string());
-  model_instance.i_start_date = (j["i_start_date"].get<std::time_t>());
-  assert(j["i_end_date"].is_string());
-  model_instance.i_end_date = (j["i_end_date"].get<std::time_t>());
-  assert(j["i_status"].is_number());
-  model_instance.i_status = (j["i_status"].get<int>());
-  assert(j["i_created"].is_string());
-  model_instance.i_created = (j["i_created"].get<std::time_t>());
-  assert(j["i_updated"].is_string());
-  model_instance.i_updated = (j["i_updated"].get<std::time_t>());
-  assert(j["i_iattr0"].is_number());
-  model_instance.i_iattr0 = (j["i_iattr0"].get<uint64_t>());
-  assert(j["i_iattr1"].is_number());
-  model_instance.i_iattr1 = (j["i_iattr1"].get<uint64_t>());
-  assert(j["i_iattr2"].is_number());
-  model_instance.i_iattr2 = (j["i_iattr2"].get<uint64_t>());
-  assert(j["i_iattr3"].is_number());
-  model_instance.i_iattr3 = (j["i_iattr3"].get<uint64_t>());
-  assert(j["i_iattr4"].is_number());
-  model_instance.i_iattr4 = (j["i_iattr4"].get<uint64_t>());
-  assert(j["i_iattr5"].is_number());
-  model_instance.i_iattr5 = (j["i_iattr5"].get<uint64_t>());
-  assert(j["i_iattr6"].is_number());
-  model_instance.i_iattr6 = (j["i_iattr6"].get<uint64_t>());
-  assert(j["i_iattr7"].is_number());
-  model_instance.i_iattr7 = (j["i_iattr7"].get<uint64_t>());
+  assert(j["i_num_global_attrs"].is_number() || j["i_num_global_attrs"].is_null());
+  if (!j["i_num_global_attrs"].is_null()) {
+    model_instance.i_num_global_attrs = (j["i_num_global_attrs"].get<uint64_t>());
+  }
+  assert(j["i_num_comments"].is_number() || j["i_num_comments"].is_null());
+  if (!j["i_num_comments"].is_null()) {
+    model_instance.i_num_comments = (j["i_num_comments"].get<uint64_t>());
+  }
+  assert(j["i_start_date"].is_string() || j["i_start_date"].is_null());
+  if (!j["i_start_date"].is_null()) {
+    model_instance.i_start_date = StrfTime(j["i_start_date"].get<std::string>());
+  }
+  assert(j["i_end_date"].is_string() || j["i_end_date"].is_null());
+  if (!j["i_end_date"].is_null()) {
+    model_instance.i_end_date = StrfTime(j["i_end_date"].get<std::string>());
+  }
+  assert(j["i_status"].is_number() || j["i_status"].is_null());
+  if (!j["i_status"].is_null()) {
+    model_instance.i_status = (j["i_status"].get<int>());
+  }
+  assert(j["i_created"].is_string() || j["i_created"].is_null());
+  if (!j["i_created"].is_null()) {
+    model_instance.i_created = StrfTime(j["i_created"].get<std::string>());
+  }
+  assert(j["i_updated"].is_string() || j["i_updated"].is_null());
+  if (!j["i_updated"].is_null()) {
+    model_instance.i_updated = StrfTime(j["i_updated"].get<std::string>());
+  }
+  assert(j["i_iattr0"].is_number() || j["i_iattr0"].is_null());
+  if (!j["i_iattr0"].is_null()) {
+    model_instance.i_iattr0 = (j["i_iattr0"].get<uint64_t>());
+  }
+  assert(j["i_iattr1"].is_number() || j["i_iattr1"].is_null());
+  if (!j["i_iattr1"].is_null()) {
+    model_instance.i_iattr1 = (j["i_iattr1"].get<uint64_t>());
+  }
+  assert(j["i_iattr2"].is_number() || j["i_iattr2"].is_null());
+  if (!j["i_iattr2"].is_null()) {
+    model_instance.i_iattr2 = (j["i_iattr2"].get<uint64_t>());
+  }
+  assert(j["i_iattr3"].is_number() || j["i_iattr3"].is_null());
+  if (!j["i_iattr3"].is_null()) {
+    model_instance.i_iattr3 = (j["i_iattr3"].get<uint64_t>());
+  }
+  assert(j["i_iattr4"].is_number() || j["i_iattr4"].is_null());
+  if (!j["i_iattr4"].is_null()) {
+    model_instance.i_iattr4 = (j["i_iattr4"].get<uint64_t>());
+  }
+  assert(j["i_iattr5"].is_number() || j["i_iattr5"].is_null());
+  if (!j["i_iattr5"].is_null()) {
+    model_instance.i_iattr5 = (j["i_iattr5"].get<uint64_t>());
+  }
+  assert(j["i_iattr6"].is_number() || j["i_iattr6"].is_null());
+  if (!j["i_iattr6"].is_null()) {
+    model_instance.i_iattr6 = (j["i_iattr6"].get<uint64_t>());
+  }
+  assert(j["i_iattr7"].is_number() || j["i_iattr7"].is_null());
+  if (!j["i_iattr7"].is_null()) {
+    model_instance.i_iattr7 = (j["i_iattr7"].get<uint64_t>());
+  }
   return std::move(model_instance);
 }
 
 std::string Item::ToJson() {
   njson j;
 
-  if (i_id.IsNull()) {
-    j["i_id"] = nullptr;
+  j["i_id"] = (i_id);
+  j["i_u_id"] = (i_u_id);
+  j["i_c_id"] = (i_c_id);
+  if (i_name.IsNull()) {
+    j["i_name"] = nullptr;
   } else {
-    j["i_id"] = (i_id.value());
+    j["i_name"] = (i_name.value());
   }
-  if (i_u_id.IsNull()) {
-    j["i_u_id"] = nullptr;
+  if (i_description.IsNull()) {
+    j["i_description"] = nullptr;
   } else {
-    j["i_u_id"] = (i_u_id.value());
+    j["i_description"] = (i_description.value());
   }
-  if (i_c_id.IsNull()) {
-    j["i_c_id"] = nullptr;
+  if (i_user_attributes.IsNull()) {
+    j["i_user_attributes"] = nullptr;
   } else {
-    j["i_c_id"] = (i_c_id.value());
+    j["i_user_attributes"] = (i_user_attributes.value());
   }
-  j["i_name"] = (i_name);
-  j["i_description"] = (i_description);
-  j["i_user_attributes"] = (i_user_attributes);
-  if (i_initial_price.IsNull()) {
-    j["i_initial_price"] = nullptr;
+  j["i_initial_price"] = (i_initial_price);
+  j["i_current_price"] = (i_current_price);
+  if (i_num_bids.IsNull()) {
+    j["i_num_bids"] = nullptr;
   } else {
-    j["i_initial_price"] = (i_initial_price.value());
+    j["i_num_bids"] = (i_num_bids.value());
   }
-  if (i_current_price.IsNull()) {
-    j["i_current_price"] = nullptr;
+  if (i_num_images.IsNull()) {
+    j["i_num_images"] = nullptr;
   } else {
-    j["i_current_price"] = (i_current_price.value());
+    j["i_num_images"] = (i_num_images.value());
   }
-  j["i_num_bids"] = (i_num_bids);
-  j["i_num_images"] = (i_num_images);
-  j["i_num_global_attrs"] = (i_num_global_attrs);
-  j["i_num_comments"] = (i_num_comments);
-  j["i_start_date"] = (i_start_date);
-  j["i_end_date"] = (i_end_date);
-  j["i_status"] = (i_status);
-  j["i_created"] = (i_created);
-  j["i_updated"] = (i_updated);
-  j["i_iattr0"] = (i_iattr0);
-  j["i_iattr1"] = (i_iattr1);
-  j["i_iattr2"] = (i_iattr2);
-  j["i_iattr3"] = (i_iattr3);
-  j["i_iattr4"] = (i_iattr4);
-  j["i_iattr5"] = (i_iattr5);
-  j["i_iattr6"] = (i_iattr6);
-  j["i_iattr7"] = (i_iattr7);
+  if (i_num_global_attrs.IsNull()) {
+    j["i_num_global_attrs"] = nullptr;
+  } else {
+    j["i_num_global_attrs"] = (i_num_global_attrs.value());
+  }
+  if (i_num_comments.IsNull()) {
+    j["i_num_comments"] = nullptr;
+  } else {
+    j["i_num_comments"] = (i_num_comments.value());
+  }
+  if (i_start_date.IsNull()) {
+    j["i_start_date"] = nullptr;
+  } else {
+    j["i_start_date"] = TimeToString(i_start_date.value());
+  }
+  if (i_end_date.IsNull()) {
+    j["i_end_date"] = nullptr;
+  } else {
+    j["i_end_date"] = TimeToString(i_end_date.value());
+  }
+  if (i_status.IsNull()) {
+    j["i_status"] = nullptr;
+  } else {
+    j["i_status"] = (i_status.value());
+  }
+  if (i_created.IsNull()) {
+    j["i_created"] = nullptr;
+  } else {
+    j["i_created"] = TimeToString(i_created.value());
+  }
+  if (i_updated.IsNull()) {
+    j["i_updated"] = nullptr;
+  } else {
+    j["i_updated"] = TimeToString(i_updated.value());
+  }
+  if (i_iattr0.IsNull()) {
+    j["i_iattr0"] = nullptr;
+  } else {
+    j["i_iattr0"] = (i_iattr0.value());
+  }
+  if (i_iattr1.IsNull()) {
+    j["i_iattr1"] = nullptr;
+  } else {
+    j["i_iattr1"] = (i_iattr1.value());
+  }
+  if (i_iattr2.IsNull()) {
+    j["i_iattr2"] = nullptr;
+  } else {
+    j["i_iattr2"] = (i_iattr2.value());
+  }
+  if (i_iattr3.IsNull()) {
+    j["i_iattr3"] = nullptr;
+  } else {
+    j["i_iattr3"] = (i_iattr3.value());
+  }
+  if (i_iattr4.IsNull()) {
+    j["i_iattr4"] = nullptr;
+  } else {
+    j["i_iattr4"] = (i_iattr4.value());
+  }
+  if (i_iattr5.IsNull()) {
+    j["i_iattr5"] = nullptr;
+  } else {
+    j["i_iattr5"] = (i_iattr5.value());
+  }
+  if (i_iattr6.IsNull()) {
+    j["i_iattr6"] = nullptr;
+  } else {
+    j["i_iattr6"] = (i_iattr6.value());
+  }
+  if (i_iattr7.IsNull()) {
+    j["i_iattr7"] = nullptr;
+  } else {
+    j["i_iattr7"] = (i_iattr7.value());
+  }
   return std::move(j.dump());
 }
 

@@ -8,14 +8,17 @@
 
 namespace auctionmark {
 
+class AuctionmarkProfile;
+
 class TableGenerator {
 public:
   TableGenerator(sqpkv::Connection *connection, AuctionmarkProfile *profile);
-  virtual ~TableGenerator();
+  virtual ~TableGenerator() {}
 
   uint64_t table_size() {
     return table_size_;
   }
+  void InitTableSize();
   virtual std::string name() = 0;
   virtual void Init() = 0;
   virtual void Prepare() = 0;

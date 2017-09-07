@@ -9,65 +9,50 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-ItemPurchase::ItemPurchase(Nullable<uint64_t> ip_id_,
-                           Nullable<uint64_t> ip_ib_id_,
-                           Nullable<uint64_t> ip_ib_i_id_,
-                           Nullable<uint64_t> ip_ib_u_id_,
-                           std::time_t        ip_date_) :
-  ip_id(ip_id_),
-  ip_ib_id(ip_ib_id_),
-  ip_ib_i_id(ip_ib_i_id_),
-  ip_ib_u_id(ip_ib_u_id_),
-  ip_date(ip_date_) {}
+ItemPurchase::ItemPurchase() {
+}
+
+ItemPurchase::ItemPurchase(uint64_t              ip_id_,
+                           uint64_t              ip_ib_id_,
+                           uint64_t              ip_ib_i_id_,
+                           uint64_t              ip_ib_u_id_,
+                           Nullable<std::time_t> ip_date_) :
+    ip_id(ip_id_),
+    ip_ib_id(ip_ib_id_),
+    ip_ib_i_id(ip_ib_i_id_),
+    ip_ib_u_id(ip_ib_u_id_),
+    ip_date(ip_date_) {}
 
 ItemPurchase ItemPurchase::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   ItemPurchase model_instance;
-  assert(j["ip_id"].is_number() || j["ip_id"].is_null());
-  if (!j["ip_id"].is_null()) {
-    model_instance.ip_id = (j["ip_id"].get<uint64_t>());
+  assert(j["ip_id"].is_number());
+  model_instance.ip_id = (j["ip_id"].get<uint64_t>());
+  assert(j["ip_ib_id"].is_number());
+  model_instance.ip_ib_id = (j["ip_ib_id"].get<uint64_t>());
+  assert(j["ip_ib_i_id"].is_number());
+  model_instance.ip_ib_i_id = (j["ip_ib_i_id"].get<uint64_t>());
+  assert(j["ip_ib_u_id"].is_number());
+  model_instance.ip_ib_u_id = (j["ip_ib_u_id"].get<uint64_t>());
+  assert(j["ip_date"].is_string() || j["ip_date"].is_null());
+  if (!j["ip_date"].is_null()) {
+    model_instance.ip_date = StrfTime(j["ip_date"].get<std::string>());
   }
-  assert(j["ip_ib_id"].is_number() || j["ip_ib_id"].is_null());
-  if (!j["ip_ib_id"].is_null()) {
-    model_instance.ip_ib_id = (j["ip_ib_id"].get<uint64_t>());
-  }
-  assert(j["ip_ib_i_id"].is_number() || j["ip_ib_i_id"].is_null());
-  if (!j["ip_ib_i_id"].is_null()) {
-    model_instance.ip_ib_i_id = (j["ip_ib_i_id"].get<uint64_t>());
-  }
-  assert(j["ip_ib_u_id"].is_number() || j["ip_ib_u_id"].is_null());
-  if (!j["ip_ib_u_id"].is_null()) {
-    model_instance.ip_ib_u_id = (j["ip_ib_u_id"].get<uint64_t>());
-  }
-  assert(j["ip_date"].is_string());
-  model_instance.ip_date = (j["ip_date"].get<std::time_t>());
   return std::move(model_instance);
 }
 
 std::string ItemPurchase::ToJson() {
   njson j;
 
-  if (ip_id.IsNull()) {
-    j["ip_id"] = nullptr;
+  j["ip_id"] = (ip_id);
+  j["ip_ib_id"] = (ip_ib_id);
+  j["ip_ib_i_id"] = (ip_ib_i_id);
+  j["ip_ib_u_id"] = (ip_ib_u_id);
+  if (ip_date.IsNull()) {
+    j["ip_date"] = nullptr;
   } else {
-    j["ip_id"] = (ip_id.value());
+    j["ip_date"] = TimeToString(ip_date.value());
   }
-  if (ip_ib_id.IsNull()) {
-    j["ip_ib_id"] = nullptr;
-  } else {
-    j["ip_ib_id"] = (ip_ib_id.value());
-  }
-  if (ip_ib_i_id.IsNull()) {
-    j["ip_ib_i_id"] = nullptr;
-  } else {
-    j["ip_ib_i_id"] = (ip_ib_i_id.value());
-  }
-  if (ip_ib_u_id.IsNull()) {
-    j["ip_ib_u_id"] = nullptr;
-  } else {
-    j["ip_ib_u_id"] = (ip_ib_u_id.value());
-  }
-  j["ip_date"] = (ip_date);
   return std::move(j.dump());
 }
 

@@ -14,9 +14,12 @@
 #include <list>
 #include <memory>
 #include <random>
+#include <unordered_map>
 #include <vector>
 
 namespace auctionmark {
+
+class TableGenerator;
 
 class AuctionmarkProfile {
 public:
@@ -26,13 +29,12 @@ public:
     return loader_start_;
   }
   
-  void RegisterGenerator(const std::string &name, TableGenerator *generator);
+  void RegisterGenerator(TableGenerator *generator);
   TableGenerator *GetGenerator(const std::string &name);
 
-  std::string RandomStringAttribute() {
+  std::string RandomStringAttribute(size_t max_len) {
     return random_generator.RandomString(
-      profile_->random_generator.RandomNumber((size_t) 1, kStrAttrMaxLen - 1),
-      kStrAttrMaxLen);
+      random_generator.RandomNumber((size_t) 1, max_len - 1), max_len);
   }
   uint64_t RandomNumberAttribute() {
     return random_generator.RandomNumber(0, 1<<30);
@@ -49,12 +51,12 @@ public:
   
   uint64_t RandomCategoryId() {
     if (random_category_.IsNull()) {
-      random_category_ = FlatHistogram<uint64_t>(items_per_category);
+      random_category_ = FlatHistogram<uint64_t>(&rng, items_per_category);
     }
     return random_category_->Next();
   }
 
-  ItemStatus AddToAppropriateQueue(const ItemInfo &item_info, bool is_loader) {
+  ItemStatus AddToAppropriateQueue(ItemInfo &item_info, bool is_loader) {
     std::time_t base_time = is_loader ? loader_start_ : Now();
     return AddToAppropriateQueue(item_info, base_time);
   }
@@ -79,8 +81,9 @@ private:
   Nullable<UserId> RandomUserId(uint64_t min_item_count,
     const std::vector<UserId> &excludes);
 
-  bool AddItemToQueue(std::list<std::unique_ptr<ItemInfo>> &queue, ItemInfo &item_info);
-  ItemStatus AddToAppropriateQueue(const ItemInfo &item_info, std::time_t base_time);
+  bool AddItemToQueue(std::list<std::unique_ptr<ItemInfo>> &queue, const ItemInfo &item_info);
+  void RemoveItemFromQueue(std::list<std::unique_ptr<ItemInfo>> &queue, const ItemInfo &item_info);
+  ItemStatus AddToAppropriateQueue(ItemInfo &item_info, std::time_t base_time);
 
   std::time_t loader_start_;
   Nullable<FlatHistogram<uint64_t>> random_category_;

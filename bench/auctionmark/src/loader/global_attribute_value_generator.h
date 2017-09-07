@@ -19,7 +19,7 @@ public:
     sqpkv::Connection *connection,
     AuctionmarkProfile *profile);
   virtual std::string name() override {
-    return GlobalAttributeValueGenerator::name();
+    return GlobalAttributeValue::name();
   }
   virtual void Init() {}
   virtual void Prepare() override;

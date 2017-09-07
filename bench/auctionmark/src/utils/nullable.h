@@ -9,87 +9,212 @@ namespace auctionmark {
 template<typename T>
 class Nullable {
 public:
-  Nullable() : null_(true) {}
-  Nullable(const T &val) : val_(make_unique<T>(val)), null_(false) {}
-  Nullable(const Nullable<T> &other) {
-    null_ = other.null_;
-    if (!null_) {
-      val_ = make_unique<T>(other.value());
-    }
-  }
-  Nullable(Nullable<T> &&other) : val_(std::move(other.val_)), null_(other.null_) {}
+  Nullable() {}
+  Nullable(const T &val) : val_(make_unique<T>(val)) {}
+  Nullable(const Nullable<T> &other);
+  Nullable(Nullable<T> &&other) : val_(std::move(other.val_)) {}
 
-  Nullable<T> &operator=(const T &val) {
-    if (null_) {
-      val_ = make_unique<T>(val);
-    } else {
-      *val_ = val;
-    }
-    null_ = false;
-  }
+  Nullable<T> &operator=(const T &val);
+  Nullable<T> &operator=(const Nullable<T> &other);
 
-  Nullable<T> &operator=(const Nullable<T> &other) {
-    if (other.null_) {
-      val_.reset();
-    } else if (null_) {
-      val_ = make_unique<T>(other.value());
-    }
-    null_ = other.null_;
-  }
+  operator T() const;
+  // bool operator<(const Nullable<T> &other) const;
+  // bool operator<(const T &other) const;
+  // bool operator>(const Nullable<T> &other) const;
+  // bool operator>(const T &other) const;
+  bool operator==(const Nullable<T> &other) const;
+  bool operator==(const T &value) const;
+  // bool operator>=(const Nullable<T> &other) const;
+  // bool operator>=(const T &other) const;
+  // bool operator<=(const Nullable<T> &other) const;
+  // bool operator<=(const T &other) const;
 
-  bool operator<(const Nullable<T> &other) {
-    if (null_ && !other.null_) {
-      return true;
-    }
-    if (null_ || other.null_) {
-      return false;
-    }
-    return *val_ < *other.val_;
-  }
+  T *operator->();
 
-  bool operator>(const Nullable<T> &other) {
-    return other < *this;
-  }
+  void Nullify();
 
-  bool operator==(const Nullable<T> &other) {
-    return null_ == other.null_ && value() == other.value();
-  }
+  bool IsNull() const;
 
-  bool operator==(const T &value) {
-    if (null_) {
-      return false;
-    }
-    return value() == value;
-  }
+  T &value() const;
 
-  T *operator->() {
-    return val_.get();
-  }
-
-  void Nullify() {
-    null_ = true;
-    val_.reset();
-  }
-
-  bool IsNull() const {
-    return null_;
-  }
-
-  T &value() const {
-    return *val_;
-  }
-
-  std::string ToString() const {
-    if (null_) {
-      return "null";
-    }
-    return ValToString(*val_);
-  }
+  std::string ToString() const;
 
 private:
   std::unique_ptr<T> val_;
-  bool null_;
 };
+
+// template<typename T>
+// static bool operator<(const T &otehr, const Nullable<T> &nullable);
+
+// template<typename T>
+// static bool operator>(const T &otehr, const Nullable<T> &nullable);
+
+// template<typename T>
+// static bool operator==(const T &otehr, const Nullable<T> &nullable);
+
+// template<typename T>
+// static bool operator<=(const T &otehr, const Nullable<T> &nullable);
+
+// template<typename T>
+// static bool operator>=(const T &otehr, const Nullable<T> &nullable);
+
+template<typename T>
+Nullable<T>::Nullable(const Nullable<T> &other) {
+  if (!other.IsNull()) {
+    val_ = make_unique<T>(other.value());
+  }
+}
+
+template<typename T>
+Nullable<T> &Nullable<T>::operator=(const T &val) {
+  if (IsNull()) {
+    val_ = make_unique<T>(val);
+  } else {
+    *val_ = val;
+  }
+  return *this;
+}
+
+template<typename T>
+Nullable<T> &Nullable<T>::operator=(const Nullable<T> &other) {
+  if (other.IsNull()) {
+    val_.reset();
+  } else if (IsNull()) {
+    val_ = make_unique<T>(other.value());
+  } else {
+    *val_ = other.value();
+  }
+  return *this;
+}
+
+template<typename T>
+Nullable<T>::operator T() const {
+  return value();
+}
+
+// template<typename T>
+// bool Nullable<T>::operator<(const Nullable<T> &other) const {
+//   if (IsNull() && !other.IsNull()) {
+//     return true;
+//   }
+//   if (IsNull() || other.IsNull()) {
+//     return false;
+//   }
+//   return *val_ < *other.val_;
+// }
+
+// template<typename T>
+// bool Nullable<T>::operator<(const T &other) const {
+//   if (IsNull()) {
+//     return true;
+//   }
+//   return *val_ < other;
+// }
+
+// template<typename T>
+// bool Nullable<T>::operator>(const Nullable<T> &other) const {
+//   return other < *this;
+// }
+
+// template<typename T>
+// bool Nullable<T>::operator>(const T &other) const {
+//   if (IsNull()) {
+//     return false;
+//   }
+//   return *val_ > other;
+// }
+
+template<typename T>
+bool Nullable<T>::operator==(const Nullable<T> &other) const {
+  if (IsNull() != other.IsNull()) {
+    return false;
+  }
+  if (IsNull()) {
+    return true;
+  }
+  return value() == other.value();
+}
+
+template<typename T>
+bool Nullable<T>::operator==(const T &other) const {
+  if (IsNull()) {
+    return false;
+  }
+  return value() == other;
+}
+
+// template<typename T>
+// bool Nullable<T>::operator<=(const Nullable<T> &other) const {
+//   return !(*this > other);
+// }
+
+// template<typename T>
+// bool Nullable<T>::operator<=(const T &other) const {
+//   return *this < other || *this == other;
+// }
+
+// template<typename T>
+// bool Nullable<T>::operator>=(const Nullable<T> &other) const {
+//   return !(*this < other);
+// }
+
+// template<typename T>
+// bool Nullable<T>::operator>=(const T &other) const {
+//   return *this > other || *this == other;
+// }
+
+// template<typename T>
+// bool operator<(const T &other, const Nullable<T> &nullable) {
+//   return !(nullable >= other);
+// }
+
+// template<typename T>
+// bool operator>(const T &other, const Nullable<T> &nullable) {
+//   return !(nullable <= other);
+// }
+
+// template<typename T>
+// bool operator==(const T &other, const Nullable<T> &nullable) {
+//   return nullable == other;
+// }
+
+// template<typename T>
+// bool operator<=(const T &other, const Nullable<T> &nullable) {
+//   return !(nullable > other);
+// }
+
+// template<typename T>
+// bool operator>=(const T &other, const Nullable<T> &nullable) {
+//   return !(nullable < other);
+// }
+
+template<typename T>
+T *Nullable<T>::operator->() {
+  return val_.get();
+}
+
+template<typename T>
+void Nullable<T>::Nullify() {
+  val_.reset();
+}
+
+template<typename T>
+bool Nullable<T>::IsNull() const {
+  return val_.get() == nullptr;
+}
+
+template<typename T>
+T &Nullable<T>::value() const {
+  return *val_;
+}
+
+template<typename T>
+std::string Nullable<T>::ToString() const {
+  if (IsNull()) {
+    return "null";
+  }
+  return ValToString(*val_);
+}
 
 } // namespace auctionmark
 

@@ -3,7 +3,7 @@
 
 #include "table_generator.h"
 #include "auctionmark_profile.h"
-#include "category_parser.cc"
+#include "category_parser.h"
 
 #include <list>
 

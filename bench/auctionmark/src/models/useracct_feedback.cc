@@ -9,87 +9,61 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-UseracctFeedback::UseracctFeedback(Nullable<uint64_t>    uf_u_id_,
-                                   Nullable<uint64_t>    uf_i_id_,
-                                   Nullable<uint64_t>    uf_i_u_id_,
-                                   Nullable<uint64_t>    uf_from_id_,
-                                   Nullable<int>         uf_rating_,
-                                   std::time_t           uf_date_,
-                                   Nullable<std::string> uf_sattr0_) :
-  uf_u_id(uf_u_id_),
-  uf_i_id(uf_i_id_),
-  uf_i_u_id(uf_i_u_id_),
-  uf_from_id(uf_from_id_),
-  uf_rating(uf_rating_),
-  uf_date(uf_date_),
-  uf_sattr0(uf_sattr0_) {}
+UseracctFeedback::UseracctFeedback() {
+  uf_sattr0.reserve(80);
+}
+
+UseracctFeedback::UseracctFeedback(uint64_t              uf_u_id_,
+                                   uint64_t              uf_i_id_,
+                                   uint64_t              uf_i_u_id_,
+                                   uint64_t              uf_from_id_,
+                                   int                   uf_rating_,
+                                   Nullable<std::time_t> uf_date_,
+                                   std::string           uf_sattr0_) :
+    uf_u_id(uf_u_id_),
+    uf_i_id(uf_i_id_),
+    uf_i_u_id(uf_i_u_id_),
+    uf_from_id(uf_from_id_),
+    uf_rating(uf_rating_),
+    uf_date(uf_date_),
+    uf_sattr0(uf_sattr0_) {}
 
 UseracctFeedback UseracctFeedback::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   UseracctFeedback model_instance;
-  assert(j["uf_u_id"].is_number() || j["uf_u_id"].is_null());
-  if (!j["uf_u_id"].is_null()) {
-    model_instance.uf_u_id = (j["uf_u_id"].get<uint64_t>());
+  assert(j["uf_u_id"].is_number());
+  model_instance.uf_u_id = (j["uf_u_id"].get<uint64_t>());
+  assert(j["uf_i_id"].is_number());
+  model_instance.uf_i_id = (j["uf_i_id"].get<uint64_t>());
+  assert(j["uf_i_u_id"].is_number());
+  model_instance.uf_i_u_id = (j["uf_i_u_id"].get<uint64_t>());
+  assert(j["uf_from_id"].is_number());
+  model_instance.uf_from_id = (j["uf_from_id"].get<uint64_t>());
+  assert(j["uf_rating"].is_number());
+  model_instance.uf_rating = (j["uf_rating"].get<int>());
+  assert(j["uf_date"].is_string() || j["uf_date"].is_null());
+  if (!j["uf_date"].is_null()) {
+    model_instance.uf_date = StrfTime(j["uf_date"].get<std::string>());
   }
-  assert(j["uf_i_id"].is_number() || j["uf_i_id"].is_null());
-  if (!j["uf_i_id"].is_null()) {
-    model_instance.uf_i_id = (j["uf_i_id"].get<uint64_t>());
-  }
-  assert(j["uf_i_u_id"].is_number() || j["uf_i_u_id"].is_null());
-  if (!j["uf_i_u_id"].is_null()) {
-    model_instance.uf_i_u_id = (j["uf_i_u_id"].get<uint64_t>());
-  }
-  assert(j["uf_from_id"].is_number() || j["uf_from_id"].is_null());
-  if (!j["uf_from_id"].is_null()) {
-    model_instance.uf_from_id = (j["uf_from_id"].get<uint64_t>());
-  }
-  assert(j["uf_rating"].is_number() || j["uf_rating"].is_null());
-  if (!j["uf_rating"].is_null()) {
-    model_instance.uf_rating = (j["uf_rating"].get<int>());
-  }
-  assert(j["uf_date"].is_string());
-  model_instance.uf_date = (j["uf_date"].get<std::time_t>());
-  assert(j["uf_sattr0"].is_string() || j["uf_sattr0"].is_null());
-  if (!j["uf_sattr0"].is_null()) {
-    model_instance.uf_sattr0 = (j["uf_sattr0"].get<std::string>());
-  }
+  assert(j["uf_sattr0"].is_string());
+  model_instance.uf_sattr0 = (j["uf_sattr0"].get<std::string>());
   return std::move(model_instance);
 }
 
 std::string UseracctFeedback::ToJson() {
   njson j;
 
-  if (uf_u_id.IsNull()) {
-    j["uf_u_id"] = nullptr;
+  j["uf_u_id"] = (uf_u_id);
+  j["uf_i_id"] = (uf_i_id);
+  j["uf_i_u_id"] = (uf_i_u_id);
+  j["uf_from_id"] = (uf_from_id);
+  j["uf_rating"] = (uf_rating);
+  if (uf_date.IsNull()) {
+    j["uf_date"] = nullptr;
   } else {
-    j["uf_u_id"] = (uf_u_id.value());
+    j["uf_date"] = TimeToString(uf_date.value());
   }
-  if (uf_i_id.IsNull()) {
-    j["uf_i_id"] = nullptr;
-  } else {
-    j["uf_i_id"] = (uf_i_id.value());
-  }
-  if (uf_i_u_id.IsNull()) {
-    j["uf_i_u_id"] = nullptr;
-  } else {
-    j["uf_i_u_id"] = (uf_i_u_id.value());
-  }
-  if (uf_from_id.IsNull()) {
-    j["uf_from_id"] = nullptr;
-  } else {
-    j["uf_from_id"] = (uf_from_id.value());
-  }
-  if (uf_rating.IsNull()) {
-    j["uf_rating"] = nullptr;
-  } else {
-    j["uf_rating"] = (uf_rating.value());
-  }
-  j["uf_date"] = (uf_date);
-  if (uf_sattr0.IsNull()) {
-    j["uf_sattr0"] = nullptr;
-  } else {
-    j["uf_sattr0"] = (uf_sattr0.value());
-  }
+  j["uf_sattr0"] = (uf_sattr0);
   return std::move(j.dump());
 }
 

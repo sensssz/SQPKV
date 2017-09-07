@@ -8,9 +8,11 @@
 
 namespace auctionmark {
 
+class LoaderItemInfo;
+
 class Bid {
 public:
-  Bid(LoaderItemInfo &info, uint64_t bid_id, UserId bidder_id) :
+  Bid(LoaderItemInfo *info, uint64_t bid_id, UserId bidder_id) :
     id(bid_id), user_id(bidder_id), max_bid(0), create_date(0), update_date(0),
     buyer_feedback(false), seller_feedback(false), item_info(info) {}
 
@@ -21,7 +23,7 @@ public:
   std::time_t update_date;
   bool buyer_feedback;
   bool seller_feedback;
-  LoaderItemInfo &item_info;
+  LoaderItemInfo *item_info;
 };
 
 } // namespace auctionmark

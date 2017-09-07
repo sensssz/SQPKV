@@ -9,19 +9,19 @@ ItemGenerator::ItemGenerator(sqpkv::Connection *connection, AuctionmarkProfile *
     random_purchase_duration_(
       kItemPurchaseDurationDaysMin,
       kItemPurchaseDurationDaysMax,
-      kItemPurchaseDurationDaysSigma, profile->rng),
+      kItemPurchaseDurationDaysSigma, &profile_->rng),
     random_initial_price_(
       kItemInitialPriceMin, kItemInitialPriceMax,
-      kItemInitialPriceSigma, profile_->rng),
+      kItemInitialPriceSigma, &profile_->rng),
     random_num_images_(
       kItemNumImagesMin, kItemNumImagesMax,
-      kItemNumImagesSigma, profile_->rng),
+      kItemNumImagesSigma, &profile_->rng),
     random_num_attributes_(
       kItemNumGlobalAttrsMin, kItemNumGlobalAttrsMax,
-      kItemNumGlobalAttrsSigma, profile_->rng),
+      kItemNumGlobalAttrsSigma, &profile_->rng),
     random_num_comments_(
       kItemNumCommentsMin, kItemNumCommentsMax,
-      kItemNumCommentsSigma, profile_->rng) {}
+      kItemNumCommentsSigma, &profile_->rng) {}
 
 void ItemGenerator::Init() {
   table_size_ = 0;
@@ -50,10 +50,10 @@ void ItemGenerator::PopulateRow(std::string &key, std::string &value) {
     auto pair = std::make_pair(
       Zipf<uint64_t>(kItemBidsPerDayMin * bid_duration_day,
                      kItemBidsPerDayMax * bid_duration_day,
-                     kItemBidsPerDaySigma, profile_->rng),
+                     kItemBidsPerDaySigma, &profile_->rng),
       Zipf<uint64_t>(kItemWatchesPerDayMin * bid_duration_day,
                      kItemWatchesPerDayMax * bid_duration_day,
-                     kItemWatchesPerDaySigma, profile_->rng));
+                     kItemWatchesPerDaySigma, &profile_->rng));
     item_bid_watch_zipfs_[bid_duration_day] = std::move(pair);
     iter = item_bid_watch_zipfs_.find(bid_duration_day);
   }
@@ -90,11 +90,11 @@ void ItemGenerator::PopulateRow(std::string &key, std::string &value) {
   item.i_id = item_info.item_id.Encode();
   item.i_u_id = item_info.seller_id->Encode();
   item.i_c_id = profile_->RandomCategoryId();
-  item.name = profile_->random_generator.RandomString(kItemNameLengthMin, kItemNameLengthMax);
+  item.i_name = profile_->random_generator.RandomString(kItemNameLengthMin, kItemNameLengthMax);
   item.i_description = profile_->random_generator.RandomString(kItemDescriptionLengthMin, kItemDescriptionLengthMax);
-  item.i_user_attributes = profile_->random_generator.RandomDuration(kItemUserAttributesLengthMin, kItemUserAttributesLengthMax);
+  item.i_user_attributes = profile_->random_generator.RandomString(kItemUserAttributesLengthMin, kItemUserAttributesLengthMax);
   item.i_initial_price = item_info.initial_price;
-  item.i_current_price = item_info.num_bids > 0 ? item_info.current_price : item_info.initial_price;
+  item.i_current_price = item_info.num_bids > 0 ? item_info.current_price.value() : item_info.initial_price;
   item.i_num_bids = item_info.num_bids;
   item.i_num_images = item_info.num_images;
   item.i_num_global_attrs = item_info.num_attributes;

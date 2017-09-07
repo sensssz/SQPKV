@@ -18,56 +18,56 @@ public:
     return kTableNameUseracct;
   }
 
-  Useracct() = default;
-  Useracct(Nullable<uint64_t> u_id_,
-           Nullable<uint64_t> u_rating_,
-           Nullable<double>   u_balance_,
-           int                u_comments_,
-           Nullable<uint64_t> u_r_id_,
-           std::time_t        u_created_,
-           std::time_t        u_updated_,
-           std::string        u_sattr0_,
-           std::string        u_sattr1_,
-           std::string        u_sattr2_,
-           std::string        u_sattr3_,
-           std::string        u_sattr4_,
-           std::string        u_sattr5_,
-           std::string        u_sattr6_,
-           std::string        u_sattr7_,
-           uint64_t           u_iattr0_,
-           uint64_t           u_iattr1_,
-           uint64_t           u_iattr2_,
-           uint64_t           u_iattr3_,
-           uint64_t           u_iattr4_,
-           uint64_t           u_iattr5_,
-           uint64_t           u_iattr6_,
-           uint64_t           u_iattr7_);
+  Useracct();
+  Useracct(uint64_t              u_id_,
+           uint64_t              u_rating_,
+           double                u_balance_,
+           Nullable<int>         u_comments_,
+           uint64_t              u_r_id_,
+           Nullable<std::time_t> u_created_,
+           Nullable<std::time_t> u_updated_,
+           Nullable<std::string> u_sattr0_,
+           Nullable<std::string> u_sattr1_,
+           Nullable<std::string> u_sattr2_,
+           Nullable<std::string> u_sattr3_,
+           Nullable<std::string> u_sattr4_,
+           Nullable<std::string> u_sattr5_,
+           Nullable<std::string> u_sattr6_,
+           Nullable<std::string> u_sattr7_,
+           Nullable<uint64_t>    u_iattr0_,
+           Nullable<uint64_t>    u_iattr1_,
+           Nullable<uint64_t>    u_iattr2_,
+           Nullable<uint64_t>    u_iattr3_,
+           Nullable<uint64_t>    u_iattr4_,
+           Nullable<uint64_t>    u_iattr5_,
+           Nullable<uint64_t>    u_iattr6_,
+           Nullable<uint64_t>    u_iattr7_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    u_id;
-  Nullable<uint64_t>    u_rating;
-  Nullable<double>      u_balance;
-  int                   u_comments;
-  Nullable<uint64_t>    u_r_id;
-  std::time_t           u_created;
-  std::time_t           u_updated;
-  std::string           u_sattr0;
-  std::string           u_sattr1;
-  std::string           u_sattr2;
-  std::string           u_sattr3;
-  std::string           u_sattr4;
-  std::string           u_sattr5;
-  std::string           u_sattr6;
-  std::string           u_sattr7;
-  uint64_t              u_iattr0;
-  uint64_t              u_iattr1;
-  uint64_t              u_iattr2;
-  uint64_t              u_iattr3;
-  uint64_t              u_iattr4;
-  uint64_t              u_iattr5;
-  uint64_t              u_iattr6;
-  uint64_t              u_iattr7;
+  uint64_t                 u_id;
+  uint64_t                 u_rating;
+  double                   u_balance;
+  Nullable<int>            u_comments;
+  uint64_t                 u_r_id;
+  Nullable<std::time_t>    u_created;
+  Nullable<std::time_t>    u_updated;
+  Nullable<std::string>    u_sattr0;
+  Nullable<std::string>    u_sattr1;
+  Nullable<std::string>    u_sattr2;
+  Nullable<std::string>    u_sattr3;
+  Nullable<std::string>    u_sattr4;
+  Nullable<std::string>    u_sattr5;
+  Nullable<std::string>    u_sattr6;
+  Nullable<std::string>    u_sattr7;
+  Nullable<uint64_t>       u_iattr0;
+  Nullable<uint64_t>       u_iattr1;
+  Nullable<uint64_t>       u_iattr2;
+  Nullable<uint64_t>       u_iattr3;
+  Nullable<uint64_t>       u_iattr4;
+  Nullable<uint64_t>       u_iattr5;
+  Nullable<uint64_t>       u_iattr6;
+  Nullable<uint64_t>       u_iattr7;
 };
 
 } // namespace auctionmark

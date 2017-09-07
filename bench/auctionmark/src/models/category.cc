@@ -9,41 +9,54 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-Category::Category(Nullable<uint64_t> c_id_,
-                   std::string        c_name_,
-                   uint64_t           c_parent_id_,
-                   bool               is_leaf_,
-                   uint64_t           item_count_) :
-  c_id(c_id_),
-  c_name(c_name_),
-  c_parent_id(c_parent_id_),
-  is_leaf(is_leaf_),
-  item_count(item_count_) {}
+Category::Category() {
+  c_name = "";
+  c_name->reserve(50);
+}
+
+Category::Category(uint64_t              c_id_,
+                   Nullable<std::string> c_name_,
+                   Nullable<uint64_t>    c_parent_id_,
+                   uint64_t              item_count_,
+                   bool                  is_leaf_) :
+    c_id(c_id_),
+    c_name(c_name_),
+    c_parent_id(c_parent_id_),
+    item_count(item_count_),
+    is_leaf(is_leaf_) {
+  c_name->reserve(50);
+}
 
 Category Category::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   Category model_instance;
-  assert(j["c_id"].is_number() || j["c_id"].is_null());
-  if (!j["c_id"].is_null()) {
-    model_instance.c_id = (j["c_id"].get<uint64_t>());
+  assert(j["c_id"].is_number());
+  model_instance.c_id = (j["c_id"].get<uint64_t>());
+  assert(j["c_name"].is_string() || j["c_name"].is_null());
+  if (!j["c_name"].is_null()) {
+    model_instance.c_name = (j["c_name"].get<std::string>());
   }
-  assert(j["c_name"].is_string());
-  model_instance.c_name = (j["c_name"].get<std::string>());
-  assert(j["c_parent_id"].is_number());
-  model_instance.c_parent_id = (j["c_parent_id"].get<uint64_t>());
+  assert(j["c_parent_id"].is_number() || j["c_parent_id"].is_null());
+  if (!j["c_parent_id"].is_null()) {
+    model_instance.c_parent_id = (j["c_parent_id"].get<uint64_t>());
+  }
   return std::move(model_instance);
 }
 
 std::string Category::ToJson() {
   njson j;
 
-  if (c_id.IsNull()) {
-    j["c_id"] = nullptr;
+  j["c_id"] = (c_id);
+  if (c_name.IsNull()) {
+    j["c_name"] = nullptr;
   } else {
-    j["c_id"] = (c_id.value());
+    j["c_name"] = (c_name.value());
   }
-  j["c_name"] = (c_name);
-  j["c_parent_id"] = (c_parent_id);
+  if (c_parent_id.IsNull()) {
+    j["c_parent_id"] = nullptr;
+  } else {
+    j["c_parent_id"] = (c_parent_id.value());
+  }
   return std::move(j.dump());
 }
 

@@ -16,7 +16,7 @@ ItemId::ItemId(uint64_t composite_id) : user_id_(0, 0) {
 }
 
 uint64_t ItemId::Encode() {
-  CompositeId::Encode(kCompositeBits, kCompositeBitsPows);
+  return CompositeId::Encode(kCompositeBits, kCompositeBitsPows);
 }
 
 void ItemId::Decode(uint64_t composite_id) {

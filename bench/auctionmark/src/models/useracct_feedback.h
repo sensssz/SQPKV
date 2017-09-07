@@ -18,24 +18,24 @@ public:
     return kTableNameUseracctFeedback;
   }
 
-  UseracctFeedback() = default;
-  UseracctFeedback(Nullable<uint64_t>    uf_u_id_,
-                   Nullable<uint64_t>    uf_i_id_,
-                   Nullable<uint64_t>    uf_i_u_id_,
-                   Nullable<uint64_t>    uf_from_id_,
-                   Nullable<int>         uf_rating_,
-                   std::time_t           uf_date_,
-                   Nullable<std::string> uf_sattr0_);
+  UseracctFeedback();
+  UseracctFeedback(uint64_t              uf_u_id_,
+                   uint64_t              uf_i_id_,
+                   uint64_t              uf_i_u_id_,
+                   uint64_t              uf_from_id_,
+                   int                   uf_rating_,
+                   Nullable<std::time_t> uf_date_,
+                   std::string           uf_sattr0_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>       uf_u_id;
-  Nullable<uint64_t>       uf_i_id;
-  Nullable<uint64_t>       uf_i_u_id;
-  Nullable<uint64_t>       uf_from_id;
-  Nullable<int>            uf_rating;
-  std::time_t              uf_date;
-  Nullable<std::string>    uf_sattr0;
+  uint64_t                 uf_u_id;
+  uint64_t                 uf_i_id;
+  uint64_t                 uf_i_u_id;
+  uint64_t                 uf_from_id;
+  int                      uf_rating;
+  Nullable<std::time_t>    uf_date;
+  std::string              uf_sattr0;
 };
 
 } // namespace auctionmark

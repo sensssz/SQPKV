@@ -12,15 +12,15 @@ static const size_t kStrAttrMaxLen = 64;
 UserGenerator::UserGenerator(
   sqpkv::Connection *connection, AuctionmarkProfile *profile) :
     TableGenerator(connection, profile),
-    random_rating_(kUserMinRating, kUserMaxRating, kSigma, profile->rng),
-    random_balance_(kUserMinBalance, kUserMaxBalance, kSigma, profile->rng) {}
+    random_rating_(kUserMinRating, kUserMaxRating, kSigma, &profile->rng),
+    random_balance_(kUserMinBalance, kUserMaxBalance, kSigma, &profile->rng) {}
 
 void UserGenerator::Init() {
   table_size_ = kTableSizeUseracct;
   uint64_t max_items = std::max((uint64_t) 1, static_cast<uint64_t>(
     ceil(kItemItemsPerSellerMax * profile_->scale_factor)));
   Zipf<uint64_t> random_num_items(kItemItemsPerSellerMin, max_items,
-    kItemItemsPerSellerSigma, profile_->rng);
+    kItemItemsPerSellerSigma, &profile_->rng);
   for (uint64_t i = 0; i < table_size_; i++) {
     uint64_t num_items = random_num_items.RandomNumber();
     profile_->users_per_item_count.Put(num_items);
@@ -39,14 +39,14 @@ void UserGenerator::PopulateRow(std::string &key, std::string &value) {
   user.u_r_id = profile_->random_generator.RandomNumber((uint64_t) 0, kTableSizeRegion);
   user.u_created = Now();
   user.u_updated = Now();
-  user.u_sattr0 = profile_->RandomStringAttribute();
-  user.u_sattr1 = profile_->RandomStringAttribute();
-  user.u_sattr2 = profile_->RandomStringAttribute();
-  user.u_sattr3 = profile_->RandomStringAttribute();
-  user.u_sattr4 = profile_->RandomStringAttribute();
-  user.u_sattr5 = profile_->RandomStringAttribute();
-  user.u_sattr6 = profile_->RandomStringAttribute();
-  user.u_sattr7 = profile_->RandomStringAttribute();
+  user.u_sattr0 = profile_->RandomStringAttribute(user.u_sattr0->capacity());
+  user.u_sattr1 = profile_->RandomStringAttribute(user.u_sattr1->capacity());
+  user.u_sattr2 = profile_->RandomStringAttribute(user.u_sattr2->capacity());
+  user.u_sattr3 = profile_->RandomStringAttribute(user.u_sattr3->capacity());
+  user.u_sattr4 = profile_->RandomStringAttribute(user.u_sattr4->capacity());
+  user.u_sattr5 = profile_->RandomStringAttribute(user.u_sattr5->capacity());
+  user.u_sattr6 = profile_->RandomStringAttribute(user.u_sattr6->capacity());
+  user.u_sattr7 = profile_->RandomStringAttribute(user.u_sattr7->capacity());
   user.u_iattr0 = profile_->RandomNumberAttribute();
   user.u_iattr2 = profile_->RandomNumberAttribute();
   user.u_iattr3 = profile_->RandomNumberAttribute();

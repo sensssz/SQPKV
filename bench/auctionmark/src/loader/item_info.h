@@ -11,7 +11,8 @@ namespace auctionmark {
 
 class ItemInfo {
 public:
-  ItemInfo(ItemId id, Nullable<double> price, Nullable<std::time_t> end, uint64_t bids);
+  ItemInfo(ItemId id, Nullable<double> price, Nullable<std::time_t> end, uint64_t bids) :
+      item_id(id), current_price(price), end_date(end), num_bids(bids) {}
 
   bool operator<(const ItemInfo &other) {
     return item_id < other.item_id;

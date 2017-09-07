@@ -9,65 +9,52 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-UseracctAttributes::UseracctAttributes(Nullable<uint64_t>    ua_id_,
-                                       Nullable<uint64_t>    ua_u_id_,
-                                       Nullable<std::string> ua_name_,
-                                       Nullable<std::string> ua_value_,
-                                       std::time_t           u_created_) :
-  ua_id(ua_id_),
-  ua_u_id(ua_u_id_),
-  ua_name(ua_name_),
-  ua_value(ua_value_),
-  u_created(u_created_) {}
+UseracctAttributes::UseracctAttributes() {
+  ua_name.reserve(32);
+  ua_value.reserve(32);
+}
+
+UseracctAttributes::UseracctAttributes(uint64_t              ua_id_,
+                                       uint64_t              ua_u_id_,
+                                       std::string           ua_name_,
+                                       std::string           ua_value_,
+                                       Nullable<std::time_t> u_created_) :
+    ua_id(ua_id_),
+    ua_u_id(ua_u_id_),
+    ua_name(ua_name_),
+    ua_value(ua_value_),
+    u_created(u_created_) {}
 
 UseracctAttributes UseracctAttributes::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   UseracctAttributes model_instance;
-  assert(j["ua_id"].is_number() || j["ua_id"].is_null());
-  if (!j["ua_id"].is_null()) {
-    model_instance.ua_id = (j["ua_id"].get<uint64_t>());
+  assert(j["ua_id"].is_number());
+  model_instance.ua_id = (j["ua_id"].get<uint64_t>());
+  assert(j["ua_u_id"].is_number());
+  model_instance.ua_u_id = (j["ua_u_id"].get<uint64_t>());
+  assert(j["ua_name"].is_string());
+  model_instance.ua_name = (j["ua_name"].get<std::string>());
+  assert(j["ua_value"].is_string());
+  model_instance.ua_value = (j["ua_value"].get<std::string>());
+  assert(j["u_created"].is_string() || j["u_created"].is_null());
+  if (!j["u_created"].is_null()) {
+    model_instance.u_created = StrfTime(j["u_created"].get<std::string>());
   }
-  assert(j["ua_u_id"].is_number() || j["ua_u_id"].is_null());
-  if (!j["ua_u_id"].is_null()) {
-    model_instance.ua_u_id = (j["ua_u_id"].get<uint64_t>());
-  }
-  assert(j["ua_name"].is_string() || j["ua_name"].is_null());
-  if (!j["ua_name"].is_null()) {
-    model_instance.ua_name = (j["ua_name"].get<std::string>());
-  }
-  assert(j["ua_value"].is_string() || j["ua_value"].is_null());
-  if (!j["ua_value"].is_null()) {
-    model_instance.ua_value = (j["ua_value"].get<std::string>());
-  }
-  assert(j["u_created"].is_string());
-  model_instance.u_created = (j["u_created"].get<std::time_t>());
   return std::move(model_instance);
 }
 
 std::string UseracctAttributes::ToJson() {
   njson j;
 
-  if (ua_id.IsNull()) {
-    j["ua_id"] = nullptr;
+  j["ua_id"] = (ua_id);
+  j["ua_u_id"] = (ua_u_id);
+  j["ua_name"] = (ua_name);
+  j["ua_value"] = (ua_value);
+  if (u_created.IsNull()) {
+    j["u_created"] = nullptr;
   } else {
-    j["ua_id"] = (ua_id.value());
+    j["u_created"] = TimeToString(u_created.value());
   }
-  if (ua_u_id.IsNull()) {
-    j["ua_u_id"] = nullptr;
-  } else {
-    j["ua_u_id"] = (ua_u_id.value());
-  }
-  if (ua_name.IsNull()) {
-    j["ua_name"] = nullptr;
-  } else {
-    j["ua_name"] = (ua_name.value());
-  }
-  if (ua_value.IsNull()) {
-    j["ua_value"] = nullptr;
-  } else {
-    j["ua_value"] = (ua_value.value());
-  }
-  j["u_created"] = (u_created);
   return std::move(j.dump());
 }
 

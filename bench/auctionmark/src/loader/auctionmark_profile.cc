@@ -12,9 +12,8 @@ void AuctionmarkProfile::StartLoading() {
   loader_start_ = Now();
 }
 
-void AuctionmarkProfile::RegisterGenerator(
-  const std::string &name, TableGenerator *generator) {
-  table_generators_[name] = generator;
+void AuctionmarkProfile::RegisterGenerator(TableGenerator *generator) {
+  table_generators_[generator->name()] = generator;
 }
 
 TableGenerator *AuctionmarkProfile::GetGenerator(const std::string &name) {
@@ -24,7 +23,7 @@ TableGenerator *AuctionmarkProfile::GetGenerator(const std::string &name) {
 Nullable<UserId> AuctionmarkProfile::RandomUserId(uint64_t min_item_count, 
   const std::vector<UserId> &excludes) {
   if (random_item_count_.IsNull()) {
-    random_item_count_ = FlatHistogram<uint64_t>(rng, users_per_item_count);
+    random_item_count_ = FlatHistogram<uint64_t>(&rng, users_per_item_count);
   }
   if (user_id_generator_.IsNull()) {
     user_id_generator_ = UserIdGenerator(users_per_item_count);
@@ -64,19 +63,18 @@ Nullable<UserId> AuctionmarkProfile::RandomBuyerId(const Histogram<UserId> previ
     user_ids.RemoveAll(exclude);
   }
   auto buyer_id = RandomBuyerId(excludes);
-  if (buyer_id.IsNull) {
+  if (buyer_id.IsNull()) {
     return std::move(buyer_id);
   }
   user_ids.Put(RandomBuyerId(excludes).value());
-  FlatHistogram<UserId> rand(rng, user_ids);
+  FlatHistogram<UserId> rand(&rng, user_ids);
   return rand.Next();
 }
 
 bool AuctionmarkProfile::AddItemToQueue(
-  std::list<std::unique_ptr<ItemInfo>> &queue, ItemInfo &item_info) {
+  std::list<std::unique_ptr<ItemInfo>> &queue, const ItemInfo &item_info) {
   bool added = false;
-  int index = 0;
-  for (auto iter = queue.begin(); iter != queue.end(); iter++, index++) {
+  for (auto iter = queue.begin(); iter != queue.end(); iter++) {
     if (*(*iter) == item_info) {
       *(*iter) = item_info;
       return true;
@@ -84,20 +82,30 @@ bool AuctionmarkProfile::AddItemToQueue(
   }
 
   if (queue.size() < kItemIdCacheSize) {
-    queue.emplace_back(item_info);
+    queue.push_back(make_unique<ItemInfo>(item_info));
     added = true;
   } else if (random_generator.RandomNumber(0, 1) == 0) {
     queue.pop_back();
-    queue.emplace_back(item_info);
+    queue.push_back(make_unique<ItemInfo>(item_info));
     added = true;
   }
   return added;
 }
 
+void AuctionmarkProfile::RemoveItemFromQueue(
+  std::list<std::unique_ptr<ItemInfo>> &queue, const ItemInfo &item_info) {
+  auto iter = queue.begin();
+  for (; iter != queue.end(); iter++) {
+    if (*(*iter) == item_info) {
+      queue.erase(iter);
+      break;
+    }
+  }
+}
+
 ItemStatus AuctionmarkProfile::AddToAppropriateQueue(
-  const ItemInfo &item_info, std::time_t base_time) {
-  
-  auto remaining = item_info.end_date - base_time;
+  ItemInfo &item_info, std::time_t base_time) {
+  auto remaining = static_cast<uint64_t>(item_info.end_date.value() - base_time);
   ItemStatus new_status = item_info.status.IsNull() ? ItemStatus::kOpen : item_info.status.value();
   if (remaining <= kItemAlreadyEnded) {
     if (item_info.num_bids > 0 && item_info.status.value() != ItemStatus::kClosed) {
@@ -109,13 +117,37 @@ ItemStatus AuctionmarkProfile::AddToAppropriateQueue(
     new_status = ItemStatus::kEndingSoon;
   }
 
-  if (new_status != item_info.status.value()) {
+  if (item_info.status != new_status) {
     switch(new_status) {
     case ItemStatus::kOpen:
-      
+      AddItemToQueue(items_available, item_info);
+      break;
+    case ItemStatus::kEndingSoon:
+      RemoveItemFromQueue(items_available, item_info);
+      AddItemToQueue(items_ending_soon, item_info);
+      break;
+    case ItemStatus::kWaitingForPurchase:
+      if (item_info.status == ItemStatus::kOpen) {
+        RemoveItemFromQueue(items_available, item_info);
+      } else {
+        RemoveItemFromQueue(items_ending_soon, item_info);
+      }
+      AddItemToQueue(items_waiting_for_purchase, item_info);
+      break;
+    case ItemStatus::kClosed:
+      if (item_info.status == ItemStatus::kOpen) {
+        RemoveItemFromQueue(items_available, item_info);
+      } else if (item_info.status == ItemStatus::kEndingSoon) {
+        RemoveItemFromQueue(items_ending_soon, item_info);
+      } else {
+        RemoveItemFromQueue(items_waiting_for_purchase, item_info);
+      }
+      AddItemToQueue(items_completed, item_info);
       break;
     }
+    item_info.status = new_status;
   }
+  return new_status;
 }
 
 } // namespace auctionmark

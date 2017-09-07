@@ -12,6 +12,8 @@
 
 namespace auctionmark {
 
+class Bid;
+
 class LoaderItemInfo : public ItemInfo {
 public:
   LoaderItemInfo(ItemId Id, std::time_t end_date, uint64_t num_bids);

@@ -18,20 +18,20 @@ public:
     return kTableNameUseracctAttributes;
   }
 
-  UseracctAttributes() = default;
-  UseracctAttributes(Nullable<uint64_t>    ua_id_,
-                     Nullable<uint64_t>    ua_u_id_,
-                     Nullable<std::string> ua_name_,
-                     Nullable<std::string> ua_value_,
-                     std::time_t           u_created_);
+  UseracctAttributes();
+  UseracctAttributes(uint64_t              ua_id_,
+                     uint64_t              ua_u_id_,
+                     std::string           ua_name_,
+                     std::string           ua_value_,
+                     Nullable<std::time_t> u_created_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>       ua_id;
-  Nullable<uint64_t>       ua_u_id;
-  Nullable<std::string>    ua_name;
-  Nullable<std::string>    ua_value;
-  std::time_t              u_created;
+  uint64_t                 ua_id;
+  uint64_t                 ua_u_id;
+  std::string              ua_name;
+  std::string              ua_value;
+  Nullable<std::time_t>    u_created;
 };
 
 } // namespace auctionmark

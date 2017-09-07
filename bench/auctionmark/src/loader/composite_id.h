@@ -12,8 +12,8 @@ public:
   virtual uint64_t Encode() = 0;
   virtual void Decode(uint64_t composite_id) = 0;
   virtual std::vector<uint64_t> ToVector() = 0;
-  bool operator<(const CompositeId &other);
-  bool operator==(const CompositeId &other);
+  virtual bool operator<(const CompositeId &other) const;
+  virtual bool operator==(const CompositeId &other) const;
 
 protected:
   static std::vector<uint64_t> CompositeBitsPreCompute(

@@ -18,18 +18,18 @@ public:
     return kTableNameUseracctWatch;
   }
 
-  UseracctWatch() = default;
-  UseracctWatch(Nullable<uint64_t> uw_u_id_,
-                Nullable<uint64_t> uw_i_id_,
-                Nullable<uint64_t> uw_i_u_id_,
-                std::time_t        uw_created_);
+  UseracctWatch();
+  UseracctWatch(uint64_t              uw_u_id_,
+                uint64_t              uw_i_id_,
+                uint64_t              uw_i_u_id_,
+                Nullable<std::time_t> uw_created_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    uw_u_id;
-  Nullable<uint64_t>    uw_i_id;
-  Nullable<uint64_t>    uw_i_u_id;
-  std::time_t           uw_created;
+  uint64_t                 uw_u_id;
+  uint64_t                 uw_i_id;
+  uint64_t                 uw_i_u_id;
+  Nullable<std::time_t>    uw_created;
 };
 
 } // namespace auctionmark

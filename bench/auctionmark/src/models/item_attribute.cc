@@ -9,76 +9,57 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-ItemAttribute::ItemAttribute(Nullable<uint64_t> ia_id_,
-                             Nullable<uint64_t> ia_i_id_,
-                             Nullable<uint64_t> ia_u_id_,
-                             Nullable<uint64_t> ia_gav_id_,
-                             Nullable<uint64_t> ia_gag_id_,
-                             std::string        ia_sattr0_) :
-  ia_id(ia_id_),
-  ia_i_id(ia_i_id_),
-  ia_u_id(ia_u_id_),
-  ia_gav_id(ia_gav_id_),
-  ia_gag_id(ia_gag_id_),
-  ia_sattr0(ia_sattr0_) {}
+ItemAttribute::ItemAttribute() {
+  ia_sattr0 = "";
+  ia_sattr0->reserve(64);
+}
+
+ItemAttribute::ItemAttribute(uint64_t              ia_id_,
+                             uint64_t              ia_i_id_,
+                             uint64_t              ia_u_id_,
+                             uint64_t              ia_gav_id_,
+                             uint64_t              ia_gag_id_,
+                             Nullable<std::string> ia_sattr0_) :
+    ia_id(ia_id_),
+    ia_i_id(ia_i_id_),
+    ia_u_id(ia_u_id_),
+    ia_gav_id(ia_gav_id_),
+    ia_gag_id(ia_gag_id_),
+    ia_sattr0(ia_sattr0_) {}
 
 ItemAttribute ItemAttribute::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   ItemAttribute model_instance;
-  assert(j["ia_id"].is_number() || j["ia_id"].is_null());
-  if (!j["ia_id"].is_null()) {
-    model_instance.ia_id = (j["ia_id"].get<uint64_t>());
+  assert(j["ia_id"].is_number());
+  model_instance.ia_id = (j["ia_id"].get<uint64_t>());
+  assert(j["ia_i_id"].is_number());
+  model_instance.ia_i_id = (j["ia_i_id"].get<uint64_t>());
+  assert(j["ia_u_id"].is_number());
+  model_instance.ia_u_id = (j["ia_u_id"].get<uint64_t>());
+  assert(j["ia_gav_id"].is_number());
+  model_instance.ia_gav_id = (j["ia_gav_id"].get<uint64_t>());
+  assert(j["ia_gag_id"].is_number());
+  model_instance.ia_gag_id = (j["ia_gag_id"].get<uint64_t>());
+  assert(j["ia_sattr0"].is_string() || j["ia_sattr0"].is_null());
+  if (!j["ia_sattr0"].is_null()) {
+    model_instance.ia_sattr0 = (j["ia_sattr0"].get<std::string>());
   }
-  assert(j["ia_i_id"].is_number() || j["ia_i_id"].is_null());
-  if (!j["ia_i_id"].is_null()) {
-    model_instance.ia_i_id = (j["ia_i_id"].get<uint64_t>());
-  }
-  assert(j["ia_u_id"].is_number() || j["ia_u_id"].is_null());
-  if (!j["ia_u_id"].is_null()) {
-    model_instance.ia_u_id = (j["ia_u_id"].get<uint64_t>());
-  }
-  assert(j["ia_gav_id"].is_number() || j["ia_gav_id"].is_null());
-  if (!j["ia_gav_id"].is_null()) {
-    model_instance.ia_gav_id = (j["ia_gav_id"].get<uint64_t>());
-  }
-  assert(j["ia_gag_id"].is_number() || j["ia_gag_id"].is_null());
-  if (!j["ia_gag_id"].is_null()) {
-    model_instance.ia_gag_id = (j["ia_gag_id"].get<uint64_t>());
-  }
-  assert(j["ia_sattr0"].is_string());
-  model_instance.ia_sattr0 = (j["ia_sattr0"].get<std::string>());
   return std::move(model_instance);
 }
 
 std::string ItemAttribute::ToJson() {
   njson j;
 
-  if (ia_id.IsNull()) {
-    j["ia_id"] = nullptr;
+  j["ia_id"] = (ia_id);
+  j["ia_i_id"] = (ia_i_id);
+  j["ia_u_id"] = (ia_u_id);
+  j["ia_gav_id"] = (ia_gav_id);
+  j["ia_gag_id"] = (ia_gag_id);
+  if (ia_sattr0.IsNull()) {
+    j["ia_sattr0"] = nullptr;
   } else {
-    j["ia_id"] = (ia_id.value());
+    j["ia_sattr0"] = (ia_sattr0.value());
   }
-  if (ia_i_id.IsNull()) {
-    j["ia_i_id"] = nullptr;
-  } else {
-    j["ia_i_id"] = (ia_i_id.value());
-  }
-  if (ia_u_id.IsNull()) {
-    j["ia_u_id"] = nullptr;
-  } else {
-    j["ia_u_id"] = (ia_u_id.value());
-  }
-  if (ia_gav_id.IsNull()) {
-    j["ia_gav_id"] = nullptr;
-  } else {
-    j["ia_gav_id"] = (ia_gav_id.value());
-  }
-  if (ia_gag_id.IsNull()) {
-    j["ia_gag_id"] = nullptr;
-  } else {
-    j["ia_gag_id"] = (ia_gag_id.value());
-  }
-  j["ia_sattr0"] = (ia_sattr0);
   return std::move(j.dump());
 }
 

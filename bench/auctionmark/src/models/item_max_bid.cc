@@ -9,81 +9,66 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-ItemMaxBid::ItemMaxBid(Nullable<uint64_t> imb_i_id_,
-                       Nullable<uint64_t> imb_u_id_,
-                       Nullable<uint64_t> imb_ib_id_,
-                       Nullable<uint64_t> imb_ib_i_id_,
-                       Nullable<uint64_t> imb_ib_u_id_,
-                       std::time_t        imb_created_,
-                       std::time_t        imb_updated_) :
-  imb_i_id(imb_i_id_),
-  imb_u_id(imb_u_id_),
-  imb_ib_id(imb_ib_id_),
-  imb_ib_i_id(imb_ib_i_id_),
-  imb_ib_u_id(imb_ib_u_id_),
-  imb_created(imb_created_),
-  imb_updated(imb_updated_) {}
+ItemMaxBid::ItemMaxBid() {
+}
+
+ItemMaxBid::ItemMaxBid(uint64_t              imb_i_id_,
+                       uint64_t              imb_u_id_,
+                       uint64_t              imb_ib_id_,
+                       uint64_t              imb_ib_i_id_,
+                       uint64_t              imb_ib_u_id_,
+                       Nullable<std::time_t> imb_created_,
+                       Nullable<std::time_t> imb_updated_) :
+    imb_i_id(imb_i_id_),
+    imb_u_id(imb_u_id_),
+    imb_ib_id(imb_ib_id_),
+    imb_ib_i_id(imb_ib_i_id_),
+    imb_ib_u_id(imb_ib_u_id_),
+    imb_created(imb_created_),
+    imb_updated(imb_updated_) {}
 
 ItemMaxBid ItemMaxBid::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   ItemMaxBid model_instance;
-  assert(j["imb_i_id"].is_number() || j["imb_i_id"].is_null());
-  if (!j["imb_i_id"].is_null()) {
-    model_instance.imb_i_id = (j["imb_i_id"].get<uint64_t>());
+  assert(j["imb_i_id"].is_number());
+  model_instance.imb_i_id = (j["imb_i_id"].get<uint64_t>());
+  assert(j["imb_u_id"].is_number());
+  model_instance.imb_u_id = (j["imb_u_id"].get<uint64_t>());
+  assert(j["imb_ib_id"].is_number());
+  model_instance.imb_ib_id = (j["imb_ib_id"].get<uint64_t>());
+  assert(j["imb_ib_i_id"].is_number());
+  model_instance.imb_ib_i_id = (j["imb_ib_i_id"].get<uint64_t>());
+  assert(j["imb_ib_u_id"].is_number());
+  model_instance.imb_ib_u_id = (j["imb_ib_u_id"].get<uint64_t>());
+  assert(j["imb_created"].is_string() || j["imb_created"].is_null());
+  if (!j["imb_created"].is_null()) {
+    model_instance.imb_created = StrfTime(j["imb_created"].get<std::string>());
   }
-  assert(j["imb_u_id"].is_number() || j["imb_u_id"].is_null());
-  if (!j["imb_u_id"].is_null()) {
-    model_instance.imb_u_id = (j["imb_u_id"].get<uint64_t>());
+  assert(j["imb_updated"].is_string() || j["imb_updated"].is_null());
+  if (!j["imb_updated"].is_null()) {
+    model_instance.imb_updated = StrfTime(j["imb_updated"].get<std::string>());
   }
-  assert(j["imb_ib_id"].is_number() || j["imb_ib_id"].is_null());
-  if (!j["imb_ib_id"].is_null()) {
-    model_instance.imb_ib_id = (j["imb_ib_id"].get<uint64_t>());
-  }
-  assert(j["imb_ib_i_id"].is_number() || j["imb_ib_i_id"].is_null());
-  if (!j["imb_ib_i_id"].is_null()) {
-    model_instance.imb_ib_i_id = (j["imb_ib_i_id"].get<uint64_t>());
-  }
-  assert(j["imb_ib_u_id"].is_number() || j["imb_ib_u_id"].is_null());
-  if (!j["imb_ib_u_id"].is_null()) {
-    model_instance.imb_ib_u_id = (j["imb_ib_u_id"].get<uint64_t>());
-  }
-  assert(j["imb_created"].is_string());
-  model_instance.imb_created = (j["imb_created"].get<std::time_t>());
-  assert(j["imb_updated"].is_string());
-  model_instance.imb_updated = (j["imb_updated"].get<std::time_t>());
   return std::move(model_instance);
 }
 
 std::string ItemMaxBid::ToJson() {
   njson j;
 
-  if (imb_i_id.IsNull()) {
-    j["imb_i_id"] = nullptr;
+  j["imb_i_id"] = (imb_i_id);
+  j["imb_u_id"] = (imb_u_id);
+  j["imb_ib_id"] = (imb_ib_id);
+  j["imb_ib_i_id"] = (imb_ib_i_id);
+  j["imb_ib_u_id"] = (imb_ib_u_id);
+  if (imb_created.IsNull()) {
+    j["imb_created"] = nullptr;
   } else {
-    j["imb_i_id"] = (imb_i_id.value());
+    j["imb_created"] = TimeToString(imb_created.value());
   }
-  if (imb_u_id.IsNull()) {
-    j["imb_u_id"] = nullptr;
+  if (imb_updated.IsNull()) {
+    j["imb_updated"] = nullptr;
   } else {
-    j["imb_u_id"] = (imb_u_id.value());
+    j["imb_updated"] = TimeToString(imb_updated.value());
   }
-  if (imb_ib_id.IsNull()) {
-    j["imb_ib_id"] = nullptr;
-  } else {
-    j["imb_ib_id"] = (imb_ib_id.value());
-  }
-  if (imb_ib_i_id.IsNull()) {
-    j["imb_ib_i_id"] = nullptr;
-  } else {
-    j["imb_ib_i_id"] = (imb_ib_i_id.value());
-  }
-  if (imb_ib_u_id.IsNull()) {
-    j["imb_ib_u_id"] = nullptr;
-  } else {
-    j["imb_ib_u_id"] = (imb_ib_u_id.value());
-  }
-  j["imb_created"] = (imb_created);
-  j["imb_updated"] = (imb_updated);
   return std::move(j.dump());
 }
 

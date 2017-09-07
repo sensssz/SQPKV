@@ -18,26 +18,26 @@ public:
     return kTableNameItemComment;
   }
 
-  ItemComment() = default;
-  ItemComment(Nullable<uint64_t>    ic_id_,
-              Nullable<uint64_t>    ic_i_id_,
-              Nullable<uint64_t>    ic_u_id_,
-              Nullable<uint64_t>    ic_buyer_id_,
-              Nullable<std::string> ic_question_,
-              std::string           ic_response_,
-              std::time_t           ic_created_,
-              std::time_t           ic_updated_);
+  ItemComment();
+  ItemComment(uint64_t              ic_id_,
+              uint64_t              ic_i_id_,
+              uint64_t              ic_u_id_,
+              uint64_t              ic_buyer_id_,
+              std::string           ic_question_,
+              Nullable<std::string> ic_response_,
+              Nullable<std::time_t> ic_created_,
+              Nullable<std::time_t> ic_updated_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>       ic_id;
-  Nullable<uint64_t>       ic_i_id;
-  Nullable<uint64_t>       ic_u_id;
-  Nullable<uint64_t>       ic_buyer_id;
-  Nullable<std::string>    ic_question;
-  std::string              ic_response;
-  std::time_t              ic_created;
-  std::time_t              ic_updated;
+  uint64_t                 ic_id;
+  uint64_t                 ic_i_id;
+  uint64_t                 ic_u_id;
+  uint64_t                 ic_buyer_id;
+  std::string              ic_question;
+  Nullable<std::string>    ic_response;
+  Nullable<std::time_t>    ic_created;
+  Nullable<std::time_t>    ic_updated;
 };
 
 } // namespace auctionmark

@@ -18,24 +18,24 @@ public:
     return kTableNameItemMaxBid;
   }
 
-  ItemMaxBid() = default;
-  ItemMaxBid(Nullable<uint64_t> imb_i_id_,
-             Nullable<uint64_t> imb_u_id_,
-             Nullable<uint64_t> imb_ib_id_,
-             Nullable<uint64_t> imb_ib_i_id_,
-             Nullable<uint64_t> imb_ib_u_id_,
-             std::time_t        imb_created_,
-             std::time_t        imb_updated_);
+  ItemMaxBid();
+  ItemMaxBid(uint64_t              imb_i_id_,
+             uint64_t              imb_u_id_,
+             uint64_t              imb_ib_id_,
+             uint64_t              imb_ib_i_id_,
+             uint64_t              imb_ib_u_id_,
+             Nullable<std::time_t> imb_created_,
+             Nullable<std::time_t> imb_updated_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    imb_i_id;
-  Nullable<uint64_t>    imb_u_id;
-  Nullable<uint64_t>    imb_ib_id;
-  Nullable<uint64_t>    imb_ib_i_id;
-  Nullable<uint64_t>    imb_ib_u_id;
-  std::time_t           imb_created;
-  std::time_t           imb_updated;
+  uint64_t                 imb_i_id;
+  uint64_t                 imb_u_id;
+  uint64_t                 imb_ib_id;
+  uint64_t                 imb_ib_i_id;
+  uint64_t                 imb_ib_u_id;
+  Nullable<std::time_t>    imb_created;
+  Nullable<std::time_t>    imb_updated;
 };
 
 } // namespace auctionmark

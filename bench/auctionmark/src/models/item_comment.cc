@@ -9,86 +9,80 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-ItemComment::ItemComment(Nullable<uint64_t>    ic_id_,
-                         Nullable<uint64_t>    ic_i_id_,
-                         Nullable<uint64_t>    ic_u_id_,
-                         Nullable<uint64_t>    ic_buyer_id_,
-                         Nullable<std::string> ic_question_,
-                         std::string           ic_response_,
-                         std::time_t           ic_created_,
-                         std::time_t           ic_updated_) :
-  ic_id(ic_id_),
-  ic_i_id(ic_i_id_),
-  ic_u_id(ic_u_id_),
-  ic_buyer_id(ic_buyer_id_),
-  ic_question(ic_question_),
-  ic_response(ic_response_),
-  ic_created(ic_created_),
-  ic_updated(ic_updated_) {}
+ItemComment::ItemComment() {
+  ic_question.reserve(128);
+  ic_response = "";
+  ic_response->reserve(128);
+}
+
+ItemComment::ItemComment(uint64_t              ic_id_,
+                         uint64_t              ic_i_id_,
+                         uint64_t              ic_u_id_,
+                         uint64_t              ic_buyer_id_,
+                         std::string           ic_question_,
+                         Nullable<std::string> ic_response_,
+                         Nullable<std::time_t> ic_created_,
+                         Nullable<std::time_t> ic_updated_) :
+    ic_id(ic_id_),
+    ic_i_id(ic_i_id_),
+    ic_u_id(ic_u_id_),
+    ic_buyer_id(ic_buyer_id_),
+    ic_question(ic_question_),
+    ic_response(ic_response_),
+    ic_created(ic_created_),
+    ic_updated(ic_updated_) {}
 
 ItemComment ItemComment::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   ItemComment model_instance;
-  assert(j["ic_id"].is_number() || j["ic_id"].is_null());
-  if (!j["ic_id"].is_null()) {
-    model_instance.ic_id = (j["ic_id"].get<uint64_t>());
+  assert(j["ic_id"].is_number());
+  model_instance.ic_id = (j["ic_id"].get<uint64_t>());
+  assert(j["ic_i_id"].is_number());
+  model_instance.ic_i_id = (j["ic_i_id"].get<uint64_t>());
+  assert(j["ic_u_id"].is_number());
+  model_instance.ic_u_id = (j["ic_u_id"].get<uint64_t>());
+  assert(j["ic_buyer_id"].is_number());
+  model_instance.ic_buyer_id = (j["ic_buyer_id"].get<uint64_t>());
+  assert(j["ic_question"].is_string());
+  model_instance.ic_question = (j["ic_question"].get<std::string>());
+  assert(j["ic_response"].is_string() || j["ic_response"].is_null());
+  if (!j["ic_response"].is_null()) {
+    model_instance.ic_response = (j["ic_response"].get<std::string>());
   }
-  assert(j["ic_i_id"].is_number() || j["ic_i_id"].is_null());
-  if (!j["ic_i_id"].is_null()) {
-    model_instance.ic_i_id = (j["ic_i_id"].get<uint64_t>());
+  assert(j["ic_created"].is_string() || j["ic_created"].is_null());
+  if (!j["ic_created"].is_null()) {
+    model_instance.ic_created = StrfTime(j["ic_created"].get<std::string>());
   }
-  assert(j["ic_u_id"].is_number() || j["ic_u_id"].is_null());
-  if (!j["ic_u_id"].is_null()) {
-    model_instance.ic_u_id = (j["ic_u_id"].get<uint64_t>());
+  assert(j["ic_updated"].is_string() || j["ic_updated"].is_null());
+  if (!j["ic_updated"].is_null()) {
+    model_instance.ic_updated = StrfTime(j["ic_updated"].get<std::string>());
   }
-  assert(j["ic_buyer_id"].is_number() || j["ic_buyer_id"].is_null());
-  if (!j["ic_buyer_id"].is_null()) {
-    model_instance.ic_buyer_id = (j["ic_buyer_id"].get<uint64_t>());
-  }
-  assert(j["ic_question"].is_string() || j["ic_question"].is_null());
-  if (!j["ic_question"].is_null()) {
-    model_instance.ic_question = (j["ic_question"].get<std::string>());
-  }
-  assert(j["ic_response"].is_string());
-  model_instance.ic_response = (j["ic_response"].get<std::string>());
-  assert(j["ic_created"].is_string());
-  model_instance.ic_created = (j["ic_created"].get<std::time_t>());
-  assert(j["ic_updated"].is_string());
-  model_instance.ic_updated = (j["ic_updated"].get<std::time_t>());
   return std::move(model_instance);
 }
 
 std::string ItemComment::ToJson() {
   njson j;
 
-  if (ic_id.IsNull()) {
-    j["ic_id"] = nullptr;
+  j["ic_id"] = (ic_id);
+  j["ic_i_id"] = (ic_i_id);
+  j["ic_u_id"] = (ic_u_id);
+  j["ic_buyer_id"] = (ic_buyer_id);
+  j["ic_question"] = (ic_question);
+  if (ic_response.IsNull()) {
+    j["ic_response"] = nullptr;
   } else {
-    j["ic_id"] = (ic_id.value());
+    j["ic_response"] = (ic_response.value());
   }
-  if (ic_i_id.IsNull()) {
-    j["ic_i_id"] = nullptr;
+  if (ic_created.IsNull()) {
+    j["ic_created"] = nullptr;
   } else {
-    j["ic_i_id"] = (ic_i_id.value());
+    j["ic_created"] = TimeToString(ic_created.value());
   }
-  if (ic_u_id.IsNull()) {
-    j["ic_u_id"] = nullptr;
+  if (ic_updated.IsNull()) {
+    j["ic_updated"] = nullptr;
   } else {
-    j["ic_u_id"] = (ic_u_id.value());
+    j["ic_updated"] = TimeToString(ic_updated.value());
   }
-  if (ic_buyer_id.IsNull()) {
-    j["ic_buyer_id"] = nullptr;
-  } else {
-    j["ic_buyer_id"] = (ic_buyer_id.value());
-  }
-  if (ic_question.IsNull()) {
-    j["ic_question"] = nullptr;
-  } else {
-    j["ic_question"] = (ic_question.value());
-  }
-  j["ic_response"] = (ic_response);
-  j["ic_created"] = (ic_created);
-  j["ic_updated"] = (ic_updated);
   return std::move(j.dump());
 }
 

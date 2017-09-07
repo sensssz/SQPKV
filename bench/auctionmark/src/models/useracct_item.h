@@ -18,26 +18,26 @@ public:
     return kTableNameUseracctItem;
   }
 
-  UseracctItem() = default;
-  UseracctItem(Nullable<uint64_t> ui_u_id_,
-               Nullable<uint64_t> ui_i_id_,
-               Nullable<uint64_t> ui_i_u_id_,
-               uint64_t           ui_ip_id_,
-               uint64_t           ui_ip_ib_id_,
-               uint64_t           ui_ip_ib_i_id_,
-               uint64_t           ui_ip_ib_u_id_,
-               std::time_t        ui_created_);
+  UseracctItem();
+  UseracctItem(uint64_t              ui_u_id_,
+               uint64_t              ui_i_id_,
+               uint64_t              ui_i_u_id_,
+               Nullable<uint64_t>    ui_ip_id_,
+               Nullable<uint64_t>    ui_ip_ib_id_,
+               Nullable<uint64_t>    ui_ip_ib_i_id_,
+               Nullable<uint64_t>    ui_ip_ib_u_id_,
+               Nullable<std::time_t> ui_created_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    ui_u_id;
-  Nullable<uint64_t>    ui_i_id;
-  Nullable<uint64_t>    ui_i_u_id;
-  uint64_t              ui_ip_id;
-  uint64_t              ui_ip_ib_id;
-  uint64_t              ui_ip_ib_i_id;
-  uint64_t              ui_ip_ib_u_id;
-  std::time_t           ui_created;
+  uint64_t                 ui_u_id;
+  uint64_t                 ui_i_id;
+  uint64_t                 ui_i_u_id;
+  Nullable<uint64_t>       ui_ip_id;
+  Nullable<uint64_t>       ui_ip_ib_id;
+  Nullable<uint64_t>       ui_ip_ib_i_id;
+  Nullable<uint64_t>       ui_ip_ib_u_id;
+  Nullable<std::time_t>    ui_created;
 };
 
 } // namespace auctionmark

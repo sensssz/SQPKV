@@ -12,7 +12,7 @@ const uint64_t kSecondsInADay = 24 * 60 * 60;
 /**
  * 1 sec in real time equals this value in the benchmark's virtual time in seconds
  */
-const uint64_t TIME_SCALE_FACTOR = 600l; // one hour
+const uint64_t kItemScaleFactor = 600l; // one hour
 
 /**
  * If the amount of time in seconds remaining for an item auction
@@ -20,9 +20,9 @@ const uint64_t TIME_SCALE_FACTOR = 600l; // one hour
  * in the client. We will increase the likelihood that a users will bid on these
  * items as it gets closer to their end times
  */
-const uint64_t ITEM_ENDING_SOON = 36000l; // 10 hours
+const uint64_t kItemEndingSoon   = 36000l; // 10 hours
 
-const uint64_t ITEM_ALREADY_ENDED = 100000;
+const uint64_t kItemAlreadyEnded = 100000;
 
 // ----------------------------------------------------------------
 // TABLE NAMES
@@ -140,9 +140,9 @@ const uint64_t kItemBidsPerDayMin = 0;
 const uint64_t kItemBidsPerDayMax = 10;
 const double kItemBidsPerDaySigma = 1.25;
     
-const uint64_t kItemWatchersPerDayMin = 0;
-const uint64_t kItemWatchersPerDayMax = 5;
-const double kItemWatchersPerDaySigma = 1.25;
+const uint64_t kItemWatchesPerDayMin = 0;
+const uint64_t kItemWatchesPerDayMax = 5;
+const double kItemWatchesPerDaySigma = 1.25;
     
 const uint64_t kItemNumImagesMin = 1;
 const uint64_t kItemNumImagesMax = 10;
@@ -155,9 +155,9 @@ const double kItemNumCommentsSigma = 1.25;
 const uint64_t kItemCommentLengthMin = 10;
 const uint64_t kItemCommentLengthMax = 128;
     
-const uint64_t kItemNumGlobalAttrsMinMin = 1;
-const uint64_t kItemNumGlobalAttrsMinMax = 10;
-const double kItemNumGlobalAttrsMinSigma = 1.25;
+const uint64_t kItemNumGlobalAttrsMin = 1;
+const uint64_t kItemNumGlobalAttrsMax = 10;
+const double kItemNumGlobalAttrsSigma = 1.25;
 
 const uint64_t kItemNameLengthMin = 16;
 const uint64_t kItemNameLengthMax = 100;
@@ -202,13 +202,6 @@ const uint64_t kItemIdCacheSize  = 1000;
   * This defines the number of items to read in when LoadConfig is invoked
   */
 const uint64_t kItemLoadConfigLimit = 5000;
-
-/**
-  * This defines the maximum size of a small cache of ItemIds that
-  * we maintain in the benchmark profile. For some procedures, the client will 
-  * ItemIds out of this cache and use them as txn parameters 
-  */
-const uint64_t kItemIdCacheSize  = 1000;
 
 /**
   * The number of update rounds in each invocation of CloseAuctions

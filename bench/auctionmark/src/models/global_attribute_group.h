@@ -18,16 +18,16 @@ public:
     return kTableNameGlobalAttributeGroup;
   }
 
-  GlobalAttributeGroup() = default;
-  GlobalAttributeGroup(Nullable<uint64_t>    gag_id_,
-                       Nullable<uint64_t>    gag_c_id_,
-                       Nullable<std::string> gag_name_);
+  GlobalAttributeGroup();
+  GlobalAttributeGroup(uint64_t    gag_id_,
+                       uint64_t    gag_c_id_,
+                       std::string gag_name_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>       gag_id;
-  Nullable<uint64_t>       gag_c_id;
-  Nullable<std::string>    gag_name;
+  uint64_t       gag_id;
+  uint64_t       gag_c_id;
+  std::string    gag_name;
 };
 
 } // namespace auctionmark

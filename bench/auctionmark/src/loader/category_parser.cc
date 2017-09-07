@@ -9,7 +9,7 @@ namespace auctionmark {
 
 CategoryParser::CategoryParser(const std::string &filename) : filename_(filename) {}
 
-bool CategoryParser::Parse() {
+void CategoryParser::Parse() {
   std::ifstream category_file(filename_);
   std::string line;
   while (std::getline(category_file, line)) {
@@ -62,13 +62,17 @@ Category *CategoryParser::AddNewCategory(const std::string &full_cname, int item
     parent_category_id = parent_category->c_id;
   }
 
-  category.reset(new Category(
-    Nullable<uint64_t>(next_category_id_++),
-    cname, parent_category_id.value(), item_count, is_leaf));
+  auto new_category = new Category();
+  new_category->c_id = next_category_id_++;
+  new_category->c_name = cname;
+  new_category->c_parent_id = std::move(parent_category_id);
+  new_category->item_count = item_count;
+  new_category->is_leaf = is_leaf;
+
+  category.reset(new_category);
   
-  auto category_ptr = category.get();
   categories_[full_cname] = std::move(category);
-  return category_ptr;
+  return new_category;
 }
 
 } // namespace auctionmark

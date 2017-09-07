@@ -9,49 +9,35 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-GlobalAttributeGroup::GlobalAttributeGroup(Nullable<uint64_t>    gag_id_,
-                                           Nullable<uint64_t>    gag_c_id_,
-                                           Nullable<std::string> gag_name_) :
-  gag_id(gag_id_),
-  gag_c_id(gag_c_id_),
-  gag_name(gag_name_) {}
+GlobalAttributeGroup::GlobalAttributeGroup() {
+  gag_name.reserve(100);
+}
+
+GlobalAttributeGroup::GlobalAttributeGroup(uint64_t    gag_id_,
+                                           uint64_t    gag_c_id_,
+                                           std::string gag_name_) :
+    gag_id(gag_id_),
+    gag_c_id(gag_c_id_),
+    gag_name(gag_name_) {}
 
 GlobalAttributeGroup GlobalAttributeGroup::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   GlobalAttributeGroup model_instance;
-  assert(j["gag_id"].is_number() || j["gag_id"].is_null());
-  if (!j["gag_id"].is_null()) {
-    model_instance.gag_id = (j["gag_id"].get<uint64_t>());
-  }
-  assert(j["gag_c_id"].is_number() || j["gag_c_id"].is_null());
-  if (!j["gag_c_id"].is_null()) {
-    model_instance.gag_c_id = (j["gag_c_id"].get<uint64_t>());
-  }
-  assert(j["gag_name"].is_string() || j["gag_name"].is_null());
-  if (!j["gag_name"].is_null()) {
-    model_instance.gag_name = (j["gag_name"].get<std::string>());
-  }
+  assert(j["gag_id"].is_number());
+  model_instance.gag_id = (j["gag_id"].get<uint64_t>());
+  assert(j["gag_c_id"].is_number());
+  model_instance.gag_c_id = (j["gag_c_id"].get<uint64_t>());
+  assert(j["gag_name"].is_string());
+  model_instance.gag_name = (j["gag_name"].get<std::string>());
   return std::move(model_instance);
 }
 
 std::string GlobalAttributeGroup::ToJson() {
   njson j;
 
-  if (gag_id.IsNull()) {
-    j["gag_id"] = nullptr;
-  } else {
-    j["gag_id"] = (gag_id.value());
-  }
-  if (gag_c_id.IsNull()) {
-    j["gag_c_id"] = nullptr;
-  } else {
-    j["gag_c_id"] = (gag_c_id.value());
-  }
-  if (gag_name.IsNull()) {
-    j["gag_name"] = nullptr;
-  } else {
-    j["gag_name"] = (gag_name.value());
-  }
+  j["gag_id"] = (gag_id);
+  j["gag_c_id"] = (gag_c_id);
+  j["gag_name"] = (gag_name);
   return std::move(j.dump());
 }
 

@@ -18,20 +18,20 @@ public:
     return kTableNameCategory;
   }
 
-  Category() = default;
-  Category(Nullable<uint64_t> c_id_,
-           std::string        c_name_,
-           uint64_t           c_parent_id_,
-           bool               is_leaf_,
-           uint64_t           item_count_);
+  Category();
+  Category(uint64_t              c_id_,
+           Nullable<std::string> c_name_,
+           Nullable<uint64_t>    c_parent_id_,
+           uint64_t              item_count_,
+           bool                  is_leaf_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    c_id;
-  std::string           c_name;
-  uint64_t              c_parent_id;
-  bool                  is_leaf;
-  uint64_t              item_count;
+  uint64_t                 c_id;
+  Nullable<std::string>    c_name;
+  Nullable<uint64_t>       c_parent_id;
+  uint64_t                 item_count;
+  bool                     is_leaf;
 };
 
 } // namespace auctionmark

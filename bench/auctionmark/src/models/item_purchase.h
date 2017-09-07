@@ -18,20 +18,20 @@ public:
     return kTableNameItemPurchase;
   }
 
-  ItemPurchase() = default;
-  ItemPurchase(Nullable<uint64_t> ip_id_,
-               Nullable<uint64_t> ip_ib_id_,
-               Nullable<uint64_t> ip_ib_i_id_,
-               Nullable<uint64_t> ip_ib_u_id_,
-               std::time_t        ip_date_);
+  ItemPurchase();
+  ItemPurchase(uint64_t              ip_id_,
+               uint64_t              ip_ib_id_,
+               uint64_t              ip_ib_i_id_,
+               uint64_t              ip_ib_u_id_,
+               Nullable<std::time_t> ip_date_);
   std::string ToJson();
   
 
-  Nullable<uint64_t>    ip_id;
-  Nullable<uint64_t>    ip_ib_id;
-  Nullable<uint64_t>    ip_ib_i_id;
-  Nullable<uint64_t>    ip_ib_u_id;
-  std::time_t           ip_date;
+  uint64_t                 ip_id;
+  uint64_t                 ip_ib_id;
+  uint64_t                 ip_ib_i_id;
+  uint64_t                 ip_ib_u_id;
+  Nullable<std::time_t>    ip_date;
 };
 
 } // namespace auctionmark

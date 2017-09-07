@@ -27,7 +27,7 @@ void GlobalAttributeGroupGenerator::PopulateRow(std::string &key, std::string &v
   group_ids_.pop_front();
   uint64_t id = gag_id.Encode();
   key = std::to_string(id);
-  value = GlobalAttributeGroup{Nullable<uint64_t>(id), gag_id.category_id(),
+  value = GlobalAttributeGroup{id, gag_id.category_id(),
     profile_->random_generator.RandomString(6, 32)}.ToJson();
 }
 

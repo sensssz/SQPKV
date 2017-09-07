@@ -9,74 +9,89 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-UseracctItem::UseracctItem(Nullable<uint64_t> ui_u_id_,
-                           Nullable<uint64_t> ui_i_id_,
-                           Nullable<uint64_t> ui_i_u_id_,
-                           uint64_t           ui_ip_id_,
-                           uint64_t           ui_ip_ib_id_,
-                           uint64_t           ui_ip_ib_i_id_,
-                           uint64_t           ui_ip_ib_u_id_,
-                           std::time_t        ui_created_) :
-  ui_u_id(ui_u_id_),
-  ui_i_id(ui_i_id_),
-  ui_i_u_id(ui_i_u_id_),
-  ui_ip_id(ui_ip_id_),
-  ui_ip_ib_id(ui_ip_ib_id_),
-  ui_ip_ib_i_id(ui_ip_ib_i_id_),
-  ui_ip_ib_u_id(ui_ip_ib_u_id_),
-  ui_created(ui_created_) {}
+UseracctItem::UseracctItem() {
+}
+
+UseracctItem::UseracctItem(uint64_t              ui_u_id_,
+                           uint64_t              ui_i_id_,
+                           uint64_t              ui_i_u_id_,
+                           Nullable<uint64_t>    ui_ip_id_,
+                           Nullable<uint64_t>    ui_ip_ib_id_,
+                           Nullable<uint64_t>    ui_ip_ib_i_id_,
+                           Nullable<uint64_t>    ui_ip_ib_u_id_,
+                           Nullable<std::time_t> ui_created_) :
+    ui_u_id(ui_u_id_),
+    ui_i_id(ui_i_id_),
+    ui_i_u_id(ui_i_u_id_),
+    ui_ip_id(ui_ip_id_),
+    ui_ip_ib_id(ui_ip_ib_id_),
+    ui_ip_ib_i_id(ui_ip_ib_i_id_),
+    ui_ip_ib_u_id(ui_ip_ib_u_id_),
+    ui_created(ui_created_) {}
 
 UseracctItem UseracctItem::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   UseracctItem model_instance;
-  assert(j["ui_u_id"].is_number() || j["ui_u_id"].is_null());
-  if (!j["ui_u_id"].is_null()) {
-    model_instance.ui_u_id = (j["ui_u_id"].get<uint64_t>());
+  assert(j["ui_u_id"].is_number());
+  model_instance.ui_u_id = (j["ui_u_id"].get<uint64_t>());
+  assert(j["ui_i_id"].is_number());
+  model_instance.ui_i_id = (j["ui_i_id"].get<uint64_t>());
+  assert(j["ui_i_u_id"].is_number());
+  model_instance.ui_i_u_id = (j["ui_i_u_id"].get<uint64_t>());
+  assert(j["ui_ip_id"].is_number() || j["ui_ip_id"].is_null());
+  if (!j["ui_ip_id"].is_null()) {
+    model_instance.ui_ip_id = (j["ui_ip_id"].get<uint64_t>());
   }
-  assert(j["ui_i_id"].is_number() || j["ui_i_id"].is_null());
-  if (!j["ui_i_id"].is_null()) {
-    model_instance.ui_i_id = (j["ui_i_id"].get<uint64_t>());
+  assert(j["ui_ip_ib_id"].is_number() || j["ui_ip_ib_id"].is_null());
+  if (!j["ui_ip_ib_id"].is_null()) {
+    model_instance.ui_ip_ib_id = (j["ui_ip_ib_id"].get<uint64_t>());
   }
-  assert(j["ui_i_u_id"].is_number() || j["ui_i_u_id"].is_null());
-  if (!j["ui_i_u_id"].is_null()) {
-    model_instance.ui_i_u_id = (j["ui_i_u_id"].get<uint64_t>());
+  assert(j["ui_ip_ib_i_id"].is_number() || j["ui_ip_ib_i_id"].is_null());
+  if (!j["ui_ip_ib_i_id"].is_null()) {
+    model_instance.ui_ip_ib_i_id = (j["ui_ip_ib_i_id"].get<uint64_t>());
   }
-  assert(j["ui_ip_id"].is_number());
-  model_instance.ui_ip_id = (j["ui_ip_id"].get<uint64_t>());
-  assert(j["ui_ip_ib_id"].is_number());
-  model_instance.ui_ip_ib_id = (j["ui_ip_ib_id"].get<uint64_t>());
-  assert(j["ui_ip_ib_i_id"].is_number());
-  model_instance.ui_ip_ib_i_id = (j["ui_ip_ib_i_id"].get<uint64_t>());
-  assert(j["ui_ip_ib_u_id"].is_number());
-  model_instance.ui_ip_ib_u_id = (j["ui_ip_ib_u_id"].get<uint64_t>());
-  assert(j["ui_created"].is_string());
-  model_instance.ui_created = (j["ui_created"].get<std::time_t>());
+  assert(j["ui_ip_ib_u_id"].is_number() || j["ui_ip_ib_u_id"].is_null());
+  if (!j["ui_ip_ib_u_id"].is_null()) {
+    model_instance.ui_ip_ib_u_id = (j["ui_ip_ib_u_id"].get<uint64_t>());
+  }
+  assert(j["ui_created"].is_string() || j["ui_created"].is_null());
+  if (!j["ui_created"].is_null()) {
+    model_instance.ui_created = StrfTime(j["ui_created"].get<std::string>());
+  }
   return std::move(model_instance);
 }
 
 std::string UseracctItem::ToJson() {
   njson j;
 
-  if (ui_u_id.IsNull()) {
-    j["ui_u_id"] = nullptr;
+  j["ui_u_id"] = (ui_u_id);
+  j["ui_i_id"] = (ui_i_id);
+  j["ui_i_u_id"] = (ui_i_u_id);
+  if (ui_ip_id.IsNull()) {
+    j["ui_ip_id"] = nullptr;
   } else {
-    j["ui_u_id"] = (ui_u_id.value());
+    j["ui_ip_id"] = (ui_ip_id.value());
   }
-  if (ui_i_id.IsNull()) {
-    j["ui_i_id"] = nullptr;
+  if (ui_ip_ib_id.IsNull()) {
+    j["ui_ip_ib_id"] = nullptr;
   } else {
-    j["ui_i_id"] = (ui_i_id.value());
+    j["ui_ip_ib_id"] = (ui_ip_ib_id.value());
   }
-  if (ui_i_u_id.IsNull()) {
-    j["ui_i_u_id"] = nullptr;
+  if (ui_ip_ib_i_id.IsNull()) {
+    j["ui_ip_ib_i_id"] = nullptr;
   } else {
-    j["ui_i_u_id"] = (ui_i_u_id.value());
+    j["ui_ip_ib_i_id"] = (ui_ip_ib_i_id.value());
   }
-  j["ui_ip_id"] = (ui_ip_id);
-  j["ui_ip_ib_id"] = (ui_ip_ib_id);
-  j["ui_ip_ib_i_id"] = (ui_ip_ib_i_id);
-  j["ui_ip_ib_u_id"] = (ui_ip_ib_u_id);
-  j["ui_created"] = (ui_created);
+  if (ui_ip_ib_u_id.IsNull()) {
+    j["ui_ip_ib_u_id"] = nullptr;
+  } else {
+    j["ui_ip_ib_u_id"] = (ui_ip_ib_u_id.value());
+  }
+  if (ui_created.IsNull()) {
+    j["ui_created"] = nullptr;
+  } else {
+    j["ui_created"] = TimeToString(ui_created.value());
+  }
   return std::move(j.dump());
 }
 

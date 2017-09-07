@@ -20,7 +20,7 @@ namespace auctionmark {
 
 Loader::Loader(sqpkv::Connection *connection) :
     connection_(connection),
-    profile_(std::make_unique<AuctionmarkProfile>(FLAGS_scale_factor)) {}
+    profile_(make_unique<AuctionmarkProfile>(FLAGS_scale_factor)) {}
 
 int Loader::Run() {
   RegionGenerator region(connection_, profile_.get());

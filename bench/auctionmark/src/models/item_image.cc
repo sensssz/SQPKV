@@ -9,60 +9,40 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-ItemImage::ItemImage(Nullable<uint64_t>    ii_id_,
-                     Nullable<uint64_t>    ii_i_id_,
-                     Nullable<uint64_t>    ii_u_id_,
-                     Nullable<std::string> ii_sattr0_) :
-  ii_id(ii_id_),
-  ii_i_id(ii_i_id_),
-  ii_u_id(ii_u_id_),
-  ii_sattr0(ii_sattr0_) {}
+ItemImage::ItemImage() {
+  ii_sattr0.reserve(128);
+}
+
+ItemImage::ItemImage(uint64_t    ii_id_,
+                     uint64_t    ii_i_id_,
+                     uint64_t    ii_u_id_,
+                     std::string ii_sattr0_) :
+    ii_id(ii_id_),
+    ii_i_id(ii_i_id_),
+    ii_u_id(ii_u_id_),
+    ii_sattr0(ii_sattr0_) {}
 
 ItemImage ItemImage::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   ItemImage model_instance;
-  assert(j["ii_id"].is_number() || j["ii_id"].is_null());
-  if (!j["ii_id"].is_null()) {
-    model_instance.ii_id = (j["ii_id"].get<uint64_t>());
-  }
-  assert(j["ii_i_id"].is_number() || j["ii_i_id"].is_null());
-  if (!j["ii_i_id"].is_null()) {
-    model_instance.ii_i_id = (j["ii_i_id"].get<uint64_t>());
-  }
-  assert(j["ii_u_id"].is_number() || j["ii_u_id"].is_null());
-  if (!j["ii_u_id"].is_null()) {
-    model_instance.ii_u_id = (j["ii_u_id"].get<uint64_t>());
-  }
-  assert(j["ii_sattr0"].is_string() || j["ii_sattr0"].is_null());
-  if (!j["ii_sattr0"].is_null()) {
-    model_instance.ii_sattr0 = (j["ii_sattr0"].get<std::string>());
-  }
+  assert(j["ii_id"].is_number());
+  model_instance.ii_id = (j["ii_id"].get<uint64_t>());
+  assert(j["ii_i_id"].is_number());
+  model_instance.ii_i_id = (j["ii_i_id"].get<uint64_t>());
+  assert(j["ii_u_id"].is_number());
+  model_instance.ii_u_id = (j["ii_u_id"].get<uint64_t>());
+  assert(j["ii_sattr0"].is_string());
+  model_instance.ii_sattr0 = (j["ii_sattr0"].get<std::string>());
   return std::move(model_instance);
 }
 
 std::string ItemImage::ToJson() {
   njson j;
 
-  if (ii_id.IsNull()) {
-    j["ii_id"] = nullptr;
-  } else {
-    j["ii_id"] = (ii_id.value());
-  }
-  if (ii_i_id.IsNull()) {
-    j["ii_i_id"] = nullptr;
-  } else {
-    j["ii_i_id"] = (ii_i_id.value());
-  }
-  if (ii_u_id.IsNull()) {
-    j["ii_u_id"] = nullptr;
-  } else {
-    j["ii_u_id"] = (ii_u_id.value());
-  }
-  if (ii_sattr0.IsNull()) {
-    j["ii_sattr0"] = nullptr;
-  } else {
-    j["ii_sattr0"] = (ii_sattr0.value());
-  }
+  j["ii_id"] = (ii_id);
+  j["ii_i_id"] = (ii_i_id);
+  j["ii_u_id"] = (ii_u_id);
+  j["ii_sattr0"] = (ii_sattr0);
   return std::move(j.dump());
 }
 

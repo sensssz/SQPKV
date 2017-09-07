@@ -17,7 +17,7 @@ set(LOADER_SRC
   src/loader/main.cc
   src/loader/region_generator.cc
   src/loader/table_generator.cc
-  src/loader/user_attribute_generator.cc
+  src/loader/user_attributes_generator.cc
   src/loader/user_generator.cc
   src/loader/user_id_generator.cc
   src/loader/user_id.cc)
@@ -25,16 +25,17 @@ set(LOADER_SRC
 AUX_SOURCE_DIRECTORY(src/models MODEL_SRC)
 
 set(UTILS_SRC
-  src/utils/flat_histogram.cc
-  src/utils/histogram.cc
   src/utils/random_generator.cc
-  src/utils/utils.cc
-  src/utils/zipf.cc)
+  src/utils/utils.cc)
 
 add_library(utils SHARED
   ${UTILS_SRC})
 
-add_executable(auctionmark_loader ${LOADER_SRC})
+add_executable(auctionmark_loader ${LOADER_SRC} ${MODEL_SRC})
 target_link_libraries(auctionmark_loader
   utils
-  sqpkv_connector)
+  sqpkv_connector
+  ${ROCKSDB_LIB}
+  ${GFLAGS_LIBRARY})
+
+install(TARGETS auctionmark_loader DESTINATION bin/)

@@ -20,6 +20,23 @@ private:
   std::uniform_int_distribution<> charset_dist_;
 };
 
+template<typename T>
+T RandomGenerator::RandomNumber(T min, T max) {
+  return std::uniform_int_distribution<T>{min, max}(rng_);
+}
+
+template<typename T>
+T RandomGenerator::RandomDuration(T min, T max) {
+  long value = -1;
+  double range = static_cast<double>(max - min);
+  std::normal_distribution<> normal;
+  while (value < 0 || value >= range) {
+    double gaussian = (normal(rng_) + 2.0) / 4.0;
+    value = static_cast<T>(round(gaussian * range));
+  }
+  return value + min;
+}
+
 } // namespace auctionmark
 
 #endif // UTILS_RANDOM_GENERATOR_H_

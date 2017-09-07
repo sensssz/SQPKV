@@ -8,7 +8,7 @@ LoaderItemInfo::LoaderItemInfo(ItemId id, std::time_t end_date, uint64_t num_bid
 
 
 Bid LoaderItemInfo::GetNextBid(uint64_t id, UserId bidder_id) {
-    Bid bid(*this, id, bidder_id);
+    Bid bid(this, id, bidder_id);
     bids_.push_back(bid);
     bidder_histogram_.Put(bidder_id);
     return std::move(bid);

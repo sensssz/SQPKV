@@ -26,7 +26,7 @@ Nullable<UserId> UserIdGenerator::Next() {
   if (next_.IsNull()) {
     next_ = NextUserId();
   }
-  Nullable<UserId> user_id = std::move(next_);
+  return std::move(next_);
 }
 
 Nullable<UserId> UserIdGenerator::SeekToPosition(uint64_t position) {

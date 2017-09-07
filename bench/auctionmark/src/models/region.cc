@@ -9,32 +9,37 @@ namespace auctionmark {
 
 using njson = nlohmann::json;
 
-Region::Region(Nullable<uint64_t> r_id_,
-               std::string        r_name_) :
-  r_id(r_id_),
-  r_name(r_name_) {}
+Region::Region() {
+  r_name = "";
+  r_name->reserve(32);
+}
+
+Region::Region(uint64_t              r_id_,
+               Nullable<std::string> r_name_) :
+    r_id(r_id_),
+    r_name(r_name_) {}
 
 Region Region::FromJson(const std::string &json) {
   njson j = njson::parse(json);
   Region model_instance;
-  assert(j["r_id"].is_number() || j["r_id"].is_null());
-  if (!j["r_id"].is_null()) {
-    model_instance.r_id = (j["r_id"].get<uint64_t>());
+  assert(j["r_id"].is_number());
+  model_instance.r_id = (j["r_id"].get<uint64_t>());
+  assert(j["r_name"].is_string() || j["r_name"].is_null());
+  if (!j["r_name"].is_null()) {
+    model_instance.r_name = (j["r_name"].get<std::string>());
   }
-  assert(j["r_name"].is_string());
-  model_instance.r_name = (j["r_name"].get<std::string>());
   return std::move(model_instance);
 }
 
 std::string Region::ToJson() {
   njson j;
 
-  if (r_id.IsNull()) {
-    j["r_id"] = nullptr;
+  j["r_id"] = (r_id);
+  if (r_name.IsNull()) {
+    j["r_name"] = nullptr;
   } else {
-    j["r_id"] = (r_id.value());
+    j["r_name"] = (r_name.value());
   }
-  j["r_name"] = (r_name);
   return std::move(j.dump());
 }
 
