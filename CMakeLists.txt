@@ -25,7 +25,14 @@ find_package( Zstd REQUIRED )
 find_package( gflags REQUIRED )
 find_package( rdma REQUIRED )
 
-add_subdirectory(bench/auctionmark)
+set(ROCKSDB_LIB
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ZLIB_LIBRARIES}
+    ${BZIP2_LIBRARIES}
+    ${ROCKSDB_LIBRARY}
+    ${SNAPPY_LIBRARY}
+    ${LZ4_LIBRARY}
+    ${ZSTD_LIBRARY})
 
 set(RDMA_SRCS
     src/rdma/rdma_connection.cc
@@ -40,8 +47,6 @@ set(PROTOCOL_SRCS
 
 set(SERVER_SRCS
     src/server/kv_request_handler.cc
-    src/server/kv_worker.cc
-    src/server/kv_worker_factory.cc
     src/server/main.cc
     src/server/server.cc
     src/server/server_launcher.cc
@@ -61,16 +66,12 @@ set(CLIENT_SRCS
 
 add_library(sqpkv_connector SHARED
     ${CONNECTOR_SRCS})
-    
+
+add_subdirectory(bench/auctionmark)
+
 add_executable(sqpkv_server ${RDMA_SRCS} ${PROTOCOL_SRCS} ${SERVER_SRCS})
 target_link_libraries(sqpkv_server
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -78,13 +79,7 @@ target_link_libraries(sqpkv_server
 add_executable(sqpkv_client ${CLIENT_SRCS})
 target_link_libraries(sqpkv_client
     sqpkv_connector
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -94,13 +89,7 @@ add_executable(test_server
     test/server.cc
     src/protocol/status.cc)
 target_link_libraries(test_server
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -110,13 +99,7 @@ add_executable(test_client
     test/client.cc
     src/protocol/status.cc)
 target_link_libraries(test_client
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -126,4 +109,3 @@ install(FILES ${CONNECTOR_HEADERS} DESTINATION include/sqpkv/)
 install(TARGETS sqpkv_connector DESTINATION lib/)
 install(TARGETS sqpkv_server DESTINATION bin/)
 install(TARGETS sqpkv_client DESTINATION bin/)
-install(TARGETS auctionmark_loader DESTINATION bin/)

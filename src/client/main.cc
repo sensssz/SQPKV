@@ -31,7 +31,29 @@ void ShowStatus(sqpkv::Status &status) {
   }
 }
 
-void ShowList(std::vector<std::string> list) {
+std::string FillCell(const std::string &item, size_t max_len) {
+  std::string left_pad;
+  std::string right_pad;
+  size_t lpad = (max_len - item.length()) / 2;
+  size_t rpad = max_len - lpad - item.length();
+  left_pad.assign(lpad, ' ');
+  right_pad.assign(rpad, ' ');
+
+  std::stringstream ss;
+  // ss << max_len << " " << lpad << " " << item.size() << " " << rpad << std::endl;
+  ss << "│" << left_pad << item << right_pad << "│" << std::endl;
+  return ss.str();
+}
+
+void ShowList(std::vector<std::string> list, std::string filename="") {
+  std::ostream out_stream(nullptr);
+  std::ofstream out_file;
+  if (filename.length() > 0) {
+    out_file.open(filename);
+    out_stream.rdbuf(out_file.rdbuf());
+  } else {
+    out_stream.rdbuf(std::cout.rdbuf());
+  }
   size_t max_len = 0;
   for (auto &item : list) {
     if (item.length() > max_len) {
@@ -39,26 +61,21 @@ void ShowList(std::vector<std::string> list) {
     }
   }
   max_len += 2;
+  out_stream << list.size() << " records found" << std::endl;
   std::stringstream ss;
   for (size_t i = 0; i < max_len; i++) {
     ss << "─";
   }
   auto hline = ss.str();
-  std::cout << "┌" << hline << "┐" << std::endl;
+  out_stream << "┌" << hline << "┐" << std::endl;
   if (list.size() > 0) {
-    std::string &item = list[0];
-    int lpad = static_cast<int>((max_len - item.length()) / 2);
-    int rpad = static_cast<int>(max_len - lpad - item.length() - 1);
-    printf("│ %*s%*s │\n", lpad, item.c_str(), rpad, "");
+    out_stream << FillCell(list[0], max_len);
   }
   for (size_t i = 1; i < list.size(); i++) {
-    auto &item = list[i];
-    std::cout << "├" << hline << "┤" << std::endl;
-    int lpad = static_cast<int>((max_len - item.length()) / 2);
-    int rpad = static_cast<int>(max_len - lpad - item.length() - 1);
-    printf("│ %*s%*s │\n", lpad, item.c_str(), rpad, "");
+    out_stream << "├" << hline << "┤" << std::endl;
+    out_stream << FillCell(list[i], max_len);
   }
-  std::cout << "└" << hline << "┘" << std::endl;
+  out_stream << "└" << hline << "┘" << std::endl;
   std::cout << "> ";
 }
 
@@ -78,7 +95,7 @@ std::vector<std::string> split(std::string str, char delimiter) {
 int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   spdlog::set_pattern("[%H:%M:%S] %v");
-  spdlog::set_level(spdlog::level::debug);
+  spdlog::set_level(spdlog::level::info);
   auto console = spdlog::stdout_color_mt("console");
   std::string server_addr;
   std::ifstream addr_file(FLAGS_server_addr_file);
@@ -101,11 +118,16 @@ int main(int argc, char *argv[]) {
   while (!quit) {
     std::getline(std::cin, line);
     if (line.find("get all ") == 0) {
+      std::string out_file;
+      size_t into_pos = line.find("into ");
+      if (into_pos != std::string::npos) {
+        out_file = line.substr(into_pos + 5);
+      }
       auto parts = split(line, ' ');
       std::vector<std::string> keys;
       auto status = connection->GetAll(parts[2], keys);
       if (status.ok()) {
-        ShowList(keys);
+        ShowList(keys, out_file);
       } else {
         ShowStatus(status);
       }
@@ -126,7 +148,7 @@ int main(int argc, char *argv[]) {
       auto parts = split(line, ' ');
       auto status = connection->Delete(parts[1]);
       ShowStatus(status);
-    } else if (line.find("quit") == 0) {
+    } else if (line.find("quit") == 0 || line.find("exit") || line.find("\\q")) {
       quit = true;
     } else {
       Show("Unsupported syntax");

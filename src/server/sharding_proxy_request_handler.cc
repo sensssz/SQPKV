@@ -43,7 +43,7 @@ void ShardingProxyRequestHandler::HandleSendCompletion(const char *buffer) {}
 
 std::vector<std::string> &&ShardingProxyRequestHandler::all_keys() {
   std::unique_lock<std::mutex> l(mutex_);
-  if (num_shards_returning_all_keys_ < num_shards) {
+  if (num_shards_returning_all_keys_ < num_shards_) {
     cond_var_.wait(l, [this]{return num_shards_returning_all_keys_ == num_shards_; });
   }
   num_shards_returning_all_keys_ = 0;
