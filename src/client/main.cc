@@ -79,7 +79,6 @@ void ShowList(std::vector<std::string> list, std::string filename="") {
   std::cout << "> ";
 }
 
-// You could also take an existing vector as a parameter.
 std::vector<std::string> split(std::string str, char delimiter) {
   std::vector<std::string> internal;
   std::stringstream ss(str); // Turn the string into a stream.
@@ -89,7 +88,7 @@ std::vector<std::string> split(std::string str, char delimiter) {
     internal.push_back(tok);
   }
   
-  return internal;
+  return std::move(internal);
 }
 
 int main(int argc, char *argv[]) {
