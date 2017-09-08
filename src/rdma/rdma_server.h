@@ -26,6 +26,7 @@ private:
   int port_;
   struct rdma_cm_id *cm_id_;
   struct rdma_event_channel *event_channel_;
+  RequestHandler *request_handler_;
 };
 
 } // namespace sqpkv

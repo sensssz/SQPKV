@@ -8,7 +8,9 @@ namespace sqpkv {
 
 KvRequestHandler::KvRequestHandler(rocksdb::DB *db) : db_(db) {}
 
-StatusOr<size_t> KvRequestHandler::HandleRecvCompletion(const char *in_buffer, char *out_buffer) {
+Status KvRequestHandler::HandleRecvCompletion(Context *context) {
+  char *in_buffer = context->recv_region;
+  char *out_buffer = context->send_region;
   auto packet = CommandPacketFactory::CreateCommandPacket(in_buffer);
   size_t size = 0;
   switch (packet->GetOp()) {
@@ -20,6 +22,8 @@ StatusOr<size_t> KvRequestHandler::HandleRecvCompletion(const char *in_buffer, c
       auto get_status = db_->Get(rocksdb::ReadOptions(), key, &value);
       spdlog::get("console")->debug("Status is {}", get_status.ToString());
       GetResponsePacket get_resp(get_status, value, out_buffer);
+      auto data = get_resp.ToBinary();
+      assert(*(reinterpret_cast<const uint32_t *>(data.data_)) + 4 == data.size_);
       size = get_resp.ToBinary().size_;
     }
     break;
@@ -61,9 +65,14 @@ StatusOr<size_t> KvRequestHandler::HandleRecvCompletion(const char *in_buffer, c
   default:
     break;
   }
-  return make_unique<size_t>(size);
+  if (size > 0) {
+    return RDMAConnection::PostSend(context, size, this);
+  }
+  return Status::Ok();
 }
 
-void KvRequestHandler::HandleSendCompletion(const char *buffer) {}
+Status KvRequestHandler::HandleSendCompletion(Context *context) {
+  return RDMAConnection::PostReceive(context, this);
+}
 
 } // namespace sqpkv

@@ -11,8 +11,8 @@ namespace sqpkv {
 class ShardingProxyRequestHandler : public RequestHandler {
 public:
   ShardingProxyRequestHandler(int client_fd, size_t num_shards);
-  virtual StatusOr<size_t> HandleRecvCompletion(const char *in_buffer, char *out_buffer) override;
-  virtual void HandleSendCompletion(const char *buffer) override;
+  virtual Status HandleRecvCompletion(Context *context) override;
+  virtual Status HandleSendCompletion(Context *context) override;
   std::vector<std::string> &&all_keys();
 private:
   int client_fd_;

@@ -45,8 +45,7 @@ set(SERVER_SRCS
     src/server/sharding_proxy_request_handler.cc
     src/server/sharding_proxy_worker.cc
     src/server/sharding_proxy_worker_factory.cc
-    src/server/table_prefix_transform.cc
-    src/server/worker_thread.cc)
+    src/server/table_prefix_transform.cc)
 
 set(CONNECTOR_SRCS
     src/connector/connection.cc

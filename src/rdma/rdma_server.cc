@@ -5,8 +5,8 @@
 namespace sqpkv {
 
 RDMAServer::RDMAServer(RequestHandler *request_handler) :
-    RDMAConnection(request_handler),
-    port_(-1), cm_id_(nullptr), event_channel_(nullptr) {}
+    port_(-1), cm_id_(nullptr), event_channel_(nullptr),
+    request_handler_(request_handler) {}
 
 Status RDMAServer::Initialize() {
   struct sockaddr_in6 addr;
@@ -65,7 +65,7 @@ Status RDMAServer::OnConnectRequest(struct rdma_cm_id *id) {
   }
 
   auto context = status_or.Take();
-  RETURN_IF_ERROR(PostReceive(context));
+  RETURN_IF_ERROR(PostReceive(context, request_handler_));
   
   struct rdma_conn_param cm_params;
   BuildParams(&cm_params);

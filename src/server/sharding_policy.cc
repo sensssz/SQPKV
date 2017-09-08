@@ -18,7 +18,7 @@ int ShardingPolicy::ExtractKey(const rocksdb::Slice &key) {
     return 0;
   }
   std::string id_string = std::string(key.data_ + id_start, key.size_ - id_start);
-  return stoi(id_string);
+  return stoul(id_string);
 }
 
 RoundRobinShardingPolicy::RoundRobinShardingPolicy(int num_nodes) : num_nodes_(num_nodes) {}

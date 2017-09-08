@@ -11,8 +11,8 @@ namespace sqpkv {
 class KvRequestHandler : public RequestHandler {
 public:
   KvRequestHandler(rocksdb::DB *db);
-  virtual StatusOr<size_t> HandleRecvCompletion(const char *in_buffer, char *out_buffer) override;
-  virtual void HandleSendCompletion(const char *buffer) override;
+  virtual Status HandleRecvCompletion(Context *context) override;
+  virtual Status HandleSendCompletion(Context *context) override;
 private:
   rocksdb::DB *db_;
 };

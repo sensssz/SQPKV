@@ -5,8 +5,8 @@ namespace sqpkv {
   const int kTimeoutInMs = 500; /* ms */
 
 RDMAClient::RDMAClient(RequestHandler *request_handler, std::string hostname, int port) :
-    RDMAConnection(request_handler),
-    port_(port), hostname_(hostname), context_(nullptr), cm_id_(nullptr), event_channel_(nullptr) {}
+    port_(port), hostname_(hostname), context_(nullptr),
+    request_handler_(request_handler), cm_id_(nullptr), event_channel_(nullptr) {}
 
 Status RDMAClient::Connect() {
   struct addrinfo *addr;
@@ -40,8 +40,8 @@ char *RDMAClient::GetRemoteBuffer() {
   return context_->send_region;
 }
 
-Status RDMAClient::SendToServer(size_t size) {
-  return PostSend(context_, size);
+Status RDMAClient::SendToServer(size_t size, RequestHandler *request_handler) {
+  return PostSend(context_, size, request_handler);
 }
 
 void RDMAClient::Disconnect() {

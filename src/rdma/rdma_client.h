@@ -11,7 +11,10 @@ public:
   RDMAClient(RequestHandler *request_handler, std::string hostname, int port);
   Status Connect();
   char *GetRemoteBuffer();
-  Status SendToServer(size_t size);
+  Status SendToServer(size_t size) {
+    return SendToServer(size, request_handler_);
+  }
+  Status SendToServer(size_t size, RequestHandler *request_handler);
   void Disconnect();
 
 protected:
@@ -23,6 +26,7 @@ private:
   int port_;
   std::string hostname_;
   Context *context_;
+  RequestHandler *request_handler_;
   struct rdma_cm_id *cm_id_;
   struct rdma_event_channel *event_channel_;
 };

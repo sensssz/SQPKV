@@ -7,6 +7,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include <list>
+#include <mutex>
 #include <thread>
 
 #include <cerrno>
@@ -52,6 +54,8 @@ namespace sqpkv {
     } \
   } while (0)
 
+class RequestHandler;
+
 class Context {
 public:
   struct rdma_cm_id *id;
@@ -69,12 +73,16 @@ public:
   struct ibv_mr *send_mr;
   
   std::thread cq_poller_thread;
+  std::list<RequestHandler *> request_handlers;
+  std::mutex list_mutex;
 };
 
 class RDMAConnection {
 public:
-  RDMAConnection(RequestHandler *request_handler);
   virtual ~RDMAConnection() {}
+
+  static Status PostReceive(Context *context, RequestHandler *request_handler);
+  static Status PostSend(Context *context, size_t size, RequestHandler *request_handler);
 
 protected:
   virtual Status OnAddressResolved(struct rdma_cm_id *id) = 0;
@@ -84,10 +92,8 @@ protected:
   virtual Status OnConnection(struct rdma_cm_id *id);
   virtual Status OnDisconnect(struct rdma_cm_id *id);
   
-    static void OnWorkCompletion(struct ibv_wc *wc, RequestHandler *request_handler);
-    static void PollCompletionQueue(Context *context, RequestHandler *request_handler);
-    static Status PostReceive(Context *context);
-    static Status PostSend(Context *context, size_t size);
+  static void OnWorkCompletion(struct ibv_wc *wc);
+  static void PollCompletionQueue(Context *context);
 
   Status OnEvent(struct rdma_cm_event *event);
   
@@ -96,8 +102,6 @@ protected:
   void BuildParams(struct rdma_conn_param *params);
   Status RegisterMemoryRegion(Context *context);
   void DestroyConnection(void *context);
-
-  RequestHandler *request_handler_;
 };
 
 } // namespace sqpkv

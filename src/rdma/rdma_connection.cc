@@ -5,11 +5,7 @@
 
 namespace sqpkv {
 
-// 16MB
-const size_t kMaxBufferSize = 1.6e+8;
-
-RDMAConnection::RDMAConnection(RequestHandler *request_handler) :
-    request_handler_(request_handler) {}
+const int kMaxBufferSize = kMaxNetPacketSize + 4;
 
 Status RDMAConnection::OnConnection(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Connection established");
@@ -40,8 +36,14 @@ Status RDMAConnection::OnEvent(struct rdma_cm_event *event) {
   }
 }
 
-void RDMAConnection::OnWorkCompletion(struct ibv_wc *wc, RequestHandler *request_handler) {
+void RDMAConnection::OnWorkCompletion(struct ibv_wc *wc) {
   Context *context = reinterpret_cast<Context *>(wc->wr_id);
+  RequestHandler *request_handler = nullptr;
+  {
+    std::unique_lock<std::mutex> l(context->list_mutex);
+    request_handler = context->request_handlers.front();
+    context->request_handlers.pop_front();
+  }
 
   if (wc->status != IBV_WC_SUCCESS) {
     spdlog::get("console")->error("OnWorkCompletion: status is not success: {}", ibv_wc_status_str(wc->status));
@@ -49,24 +51,20 @@ void RDMAConnection::OnWorkCompletion(struct ibv_wc *wc, RequestHandler *request
   }
 
   if (wc->opcode & IBV_WC_RECV) {
-    auto status_or = request_handler->HandleRecvCompletion(context->recv_region, context->send_region);
-    if (status_or.eof()) {
-      rdma_disconnect(context->id);
-      return;
-    } else if (status_or.err()) {
+    if (request_handler == nullptr) {
       return;
     }
-    size_t size_written = *status_or.GetPtr();
-    if (size_written > 0) {
-      PostSend(context, size_written);
-    }
+    request_handler->HandleRecvCompletion(context);
   } else if (wc->opcode == IBV_WC_SEND) {
-    request_handler->HandleSendCompletion(context->recv_region);
-    PostReceive(context);
+    if (request_handler == nullptr) {
+      PostReceive(context, nullptr);
+    } else {
+      request_handler->HandleSendCompletion(context);
+    }
   }
 }
 
-void RDMAConnection::PollCompletionQueue(Context *context, RequestHandler *request_handler) {
+void RDMAConnection::PollCompletionQueue(Context *context) {
   struct ibv_cq *cq = context->completion_queue;
   struct ibv_cq *ev_cq;
   struct ibv_wc wc;
@@ -78,12 +76,12 @@ void RDMAConnection::PollCompletionQueue(Context *context, RequestHandler *reque
     RETURN_IF_NON_ZERO(ibv_req_notify_cq(ev_cq, 0));
 
     while (ibv_poll_cq(cq, 1, &wc) > 0) {
-      OnWorkCompletion(&wc, request_handler);
+      OnWorkCompletion(&wc);
     }
   }
 }
 
-Status RDMAConnection::PostReceive(Context *context) {
+Status RDMAConnection::PostReceive(Context *context, RequestHandler *request_handler) {
   struct ibv_recv_wr wr, *bad_wr = nullptr;
   struct ibv_sge sge;
 
@@ -96,11 +94,15 @@ Status RDMAConnection::PostReceive(Context *context) {
   sge.length = kMaxBufferSize;
   sge.lkey = context->recv_mr->lkey;
 
+  {
+    std::unique_lock<std::mutex> l(context->list_mutex);
+    context->request_handlers.push_back(request_handler);
+  }
   ERROR_IF_NON_ZERO(ibv_post_recv(context->queue_pair, &wr, &bad_wr));
   return Status::Ok();
 }
 
-Status RDMAConnection::PostSend(Context *context, size_t size) {
+Status RDMAConnection::PostSend(Context *context, size_t size, RequestHandler *request_handler) {
   struct ibv_send_wr wr, *bad_wr = nullptr;
   struct ibv_sge sge;
 
@@ -116,8 +118,14 @@ Status RDMAConnection::PostSend(Context *context, size_t size) {
   sge.length = size;
   sge.lkey = context->send_mr->lkey;
 
-  while (!context->connected);
+  while (!context->connected) {
+    // Left empry.
+  }
 
+  {
+    std::unique_lock<std::mutex> l(context->list_mutex);
+    context->request_handlers.push_back(request_handler);
+  }
   ERROR_IF_NON_ZERO(ibv_post_send(context->queue_pair, &wr, &bad_wr));
   return Status::Ok();
 }
@@ -133,7 +141,7 @@ StatusOr<Context> RDMAConnection::BuildContext(struct rdma_cm_id *id) {
   ERROR_IF_ZERO(context->completion_queue =
     ibv_create_cq(context->device_context, 64, nullptr, context->completion_channel, 0));
   ERROR_IF_NON_ZERO(ibv_req_notify_cq(context->completion_queue, 0));
-  context->cq_poller_thread = std::thread(PollCompletionQueue, context.get(), request_handler_);
+  context->cq_poller_thread = std::thread(PollCompletionQueue, context.get());
 
   struct ibv_qp_init_attr queue_pair_attr;
   BuildQueuePairAttr(context.get(), &queue_pair_attr);
