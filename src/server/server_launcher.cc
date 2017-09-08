@@ -59,6 +59,11 @@ void ServerLauncher::InitShardingConfig() {
     delete db_;
     exit(EXIT_FAILURE);
   }
+  if (shard_id_ == 0) {
+    spdlog::set_pattern("[Proxy] %v");
+  } else {
+    spdlog::set_pattern("[Shard " + std::to_string(shard_id_) + "] %v");
+  }
   auto s = ResolveIpAddresses();
   if (!s.ok()) {
     spdlog::get("console")->error(s.message());
@@ -238,7 +243,7 @@ void ServerLauncher::ExchangeRDMAPort(int port) {
       int port = -1;
       MPI_Recv(&port, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       spdlog::get("console")->debug("Rank {} receives port {} from rank {}", proxy_rank_, port, rank);
-      32.push_back(port);
+      ports_.push_back(port);
     }
   } else {
     MPI_Send(&port, 1, MPI_INT, proxy_rank_, 0, MPI_COMM_WORLD);
@@ -256,7 +261,7 @@ int ServerLauncher::ProxyMain() {
 }
 
 int ServerLauncher::ShardMain() {
-  auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_)
+  auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_);
   sqpkv::RDMAServer server(request_handler.get());
   server.Initialize();
   int port = server.port();

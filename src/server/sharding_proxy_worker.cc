@@ -30,7 +30,8 @@ StatusOr<ShardingProxyWorker> ShardingProxyWorker::CreateProxy(
     }
     return s;
   }
-  return make_unique<ShardingProxyWorker>(client_fd, std::move(request_handler), shard_server_clients);
+  return std::unique_ptr<ShardingProxyWorker>(
+    new ShardingProxyWorker(client_fd, std::move(request_handler), shard_server_clients));
 }
 
 Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data) {

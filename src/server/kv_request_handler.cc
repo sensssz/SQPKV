@@ -20,8 +20,6 @@ StatusOr<size_t> KvRequestHandler::HandleRecvCompletion(const char *in_buffer, c
       auto get_status = db_->Get(rocksdb::ReadOptions(), key, &value);
       spdlog::get("console")->debug("Status is {}", get_status.ToString());
       GetResponsePacket get_resp(get_status, value, out_buffer);
-      auto data = get_resp.ToBinary();
-      assert(*(reinterpret_cast<const uint32_t *>(data.data_)) + 4 == data.size_);
       size = get_resp.ToBinary().size_;
     }
     break;

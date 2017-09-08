@@ -16,7 +16,7 @@
 
 #include <netdb.h>
 #include <unistd.h>
-// #include <rdma/rdma_cma.h>
+#include <rdma/rdma_cma.h>
 
 namespace sqpkv {
 

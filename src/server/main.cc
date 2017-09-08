@@ -68,9 +68,10 @@ static void InstallSignalHandler() {
 int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  auto console = spdlog::stdout_color_mt("console");;
-  spdlog::set_pattern("[%H:%M:%S] %v");
-  spdlog::set_level(spdlog::level::debug);
+  auto console = spdlog::basic_logger_mt("console", "sqpkv.log");
+  auto level = spdlog::level::debug;
+  spdlog::set_level(level);
+  console->flush_on(level);
 
   InstallSignalHandler();
 

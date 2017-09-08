@@ -38,8 +38,6 @@ set(PROTOCOL_SRCS
 
 set(SERVER_SRCS
     src/server/kv_request_handler.cc
-    src/server/kv_worker.cc
-    src/server/kv_worker_factory.cc
     src/server/main.cc
     src/server/server.cc
     src/server/server_launcher.cc

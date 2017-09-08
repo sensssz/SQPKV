@@ -5,7 +5,8 @@
 
 namespace sqpkv {
 
-const int kMaxBufferSize = kMaxNetPacketSize + 4;
+// 16MB
+const size_t kMaxBufferSize = 1.6e+8;
 
 RDMAConnection::RDMAConnection(RequestHandler *request_handler) :
     request_handler_(request_handler) {}
@@ -71,7 +72,7 @@ void RDMAConnection::PollCompletionQueue(Context *context, RequestHandler *reque
   struct ibv_wc wc;
   Context *queue_context;
 
-  while (1) {
+  while (true) {
     RETURN_IF_NON_ZERO(ibv_get_cq_event(context->completion_channel, &ev_cq, reinterpret_cast<void **>(&queue_context)));
     ibv_ack_cq_events(ev_cq, 1);
     RETURN_IF_NON_ZERO(ibv_req_notify_cq(ev_cq, 0));
