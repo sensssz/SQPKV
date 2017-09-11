@@ -5,4 +5,6 @@ include/rapidjson
 include/rocksdb
 include/spdlog
 include/json.h
+latencies
+*.py
 
