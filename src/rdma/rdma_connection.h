@@ -7,6 +7,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <chrono>
 #include <list>
 #include <mutex>
 #include <thread>
@@ -18,7 +19,7 @@
 
 #include <netdb.h>
 #include <unistd.h>
-#include <rdma/rdma_cma.h>
+// #include <rdma/rdma_cma.h>
 
 namespace sqpkv {
 
@@ -74,6 +75,7 @@ public:
   
   std::thread cq_poller_thread;
   std::list<RequestHandler *> request_handlers;
+  std::list<std::chrono::time_point<std::chrono::high_resolution_clock>> starts;
   std::mutex list_mutex;
 };
 

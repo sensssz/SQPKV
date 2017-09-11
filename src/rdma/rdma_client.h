@@ -16,6 +16,7 @@ public:
   }
   Status SendToServer(size_t size, RequestHandler *request_handler);
   void Disconnect();
+  Status CancelOustanding();
 
 protected:
   virtual Status OnAddressResolved(struct rdma_cm_id *id) override;

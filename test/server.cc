@@ -37,15 +37,17 @@ static void gen_random(char *s, const int len) {
 
 class PrintRequestHandler : public RequestHandler {
 public:
-  virtual StatusOr<size_t> HandleRecvCompletion(const char *in_buffer, char *out_buffer) {
-    spdlog::get("console")->info("Client message: {}", in_buffer);
+  virtual Status HandleRecvCompletion(Context *context, bool successful) override {
+    char *out_buffer = context->send_region;
     size_t size = 20;
     gen_random(out_buffer, size);
     spdlog::get("console")->info("Random response: {}", out_buffer);
-    return make_unique<size_t>(size);
+    return RDMAConnection::PostSend(context, size, this);
   }
 
-  virtual void HandleSendCompletion(const char *buffer) {}
+  virtual Status HandleSendCompletion(Context *context, bool successful) override {
+    return RDMAConnection::PostReceive(context, this);
+  }
 };
 
 } // namespace sqpkv

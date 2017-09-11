@@ -17,6 +17,7 @@ enum OpCode {
   kPut    = 1,
   kDelete = 2,
   kGetAll = 3,
+  kEnd    = 4,
 };
 
 /**
@@ -132,7 +133,7 @@ private:
  * +--------+--------+--------------------------------+
  * | offset |  size  |         description            |
  * +--------+--------+--------------------------------+
- * |    0   |    1   |            op kGet             |
+ * |    0   |    1   |          op kDelete            |
  * |    1   |    4   |           key size             |
  * |    5   |   var  |           key data             |
  * +--------+--------+--------------------------------+
@@ -173,6 +174,24 @@ protected:
 
 private:
   rocksdb::Slice prefix_;
+};
+
+/**
+ * Payload format:
+ * +--------+--------+--------------------------------+
+ * | offset |  size  |         description            |
+ * +--------+--------+--------------------------------+
+ * |    0   |    1   |            op kEnd             |
+ * +--------+--------+--------------------------------+
+ */
+class EndPacket : public CommandPacket {
+public:
+  EndPacket(const char *buf);
+  EndPacket();
+  OpCode GetOp();
+  
+protected:
+  uint32_t HeaderSize();
 };
 
 /**
@@ -273,6 +292,29 @@ protected:
 
 private:
   std::vector<rocksdb::Slice> keys_;
+};
+
+/**
+ * Get response payload format:
+ * +--------+--------+--------------------------------+
+ * | offset |  size  |         description            |
+ * +--------+--------+--------------------------------+
+ * |    0   |    4   |         message size           |
+ * |    4   |   var  |            message             |
+ * +--------+--------+--------------------------------+
+ */
+class EndResponsePacket : public ResponsePacket {
+public:
+  EndResponsePacket(const char *buf);
+  EndResponsePacket(const std::string &message, char *buf=nullptr);
+  EndResponsePacket(Status status, const std::string &message, char *buf);
+  rocksdb::Slice message();
+
+protected:
+  uint32_t HeaderSize();
+
+private:
+  rocksdb::Slice message_;
 };
 
 class CommandPacketFactory {

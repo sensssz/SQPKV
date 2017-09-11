@@ -60,7 +60,7 @@ const char *Packet::ReadSlice(const char *buf, rocksdb::Slice &data) {
   uint32_t size;
   data.data_ = ReadValue(buf, size);
   data.size_ = size;
-  spdlog::get("console")->debug("Size is {}, string is {}", data.size_, data.ToString());
+  // spdlog::get("console")->debug("Size is {}, string is {}", data.size_, data.ToString());
   return data.data_ + data.size_;
 }
 
@@ -200,6 +200,22 @@ ResponsePacket::ResponsePacket(const char *buf) : Packet(buf) {
   ParseStatus();
 }
 
+EndPacket::EndPacket(const char *buf) : CommandPacket(buf) {}
+
+EndPacket::EndPacket() : CommandPacket(HeaderSize(), nullptr) {
+  char *payload = Packet::Payload();
+  AddValue(payload, (char) kEnd);
+}
+
+uint32_t EndPacket::HeaderSize() {
+  // OpCode
+  return Packet::HeaderSize() + 1;
+}
+
+OpCode EndPacket::GetOp() {
+  return kEnd;
+}
+
 ResponsePacket::ResponsePacket(uint32_t payload_size, OpCode op, Status status, char *buf) : Packet(payload_size, buf) {
   char *payload = Packet::Payload();
   payload = AddValue(payload, static_cast<char>(op));
@@ -330,6 +346,30 @@ uint32_t GetAllResponsePacket::HeaderSize() {
   return ResponsePacket::HeaderSize() + 4;
 }
 
+EndResponsePacket::EndResponsePacket(const char *buf) : ResponsePacket(buf) {
+  char *payload = ResponsePacket::Payload();
+  ReadSlice(payload, message_);
+}
+
+EndResponsePacket::EndResponsePacket(const std::string &message, char *buf) :
+    EndResponsePacket(Status(), message, buf) {}
+
+EndResponsePacket::EndResponsePacket(Status status, const std::string &message, char *buf) :
+    ResponsePacket(HeaderSize() + status.message().length() + message.length(), kEnd, status, buf) {
+  AddString(ResponsePacket::Payload(), message);
+  if (buf != nullptr) {
+    Packet::Release();
+  }
+}
+
+rocksdb::Slice EndResponsePacket::message() {
+  return message_;
+}
+
+uint32_t EndResponsePacket::HeaderSize() {
+  return ResponsePacket::HeaderSize() + 4;
+}
+
 std::unique_ptr<CommandPacket> CommandPacketFactory::CreateCommandPacket(const char *buf) {
   OpCode op = static_cast<OpCode>(buf[4]);
   switch (op) {
@@ -341,6 +381,8 @@ std::unique_ptr<CommandPacket> CommandPacketFactory::CreateCommandPacket(const c
     return std::move(make_unique<DeletePacket>(buf));
   case kGetAll:
     return std::move(make_unique<GetAllPacket>(buf));
+  case kEnd:
+    return std::move(make_unique<EndPacket>(buf));
   default:
     return std::unique_ptr<CommandPacket>(nullptr);
   }
@@ -357,6 +399,8 @@ std::unique_ptr<ResponsePacket> ResponsePacketFactory::CreateResponsePacket(cons
     return std::move(make_unique<DeleteResponsePacket>(buf));
   case kGetAll:
     return std::move(make_unique<GetAllResponsePacket>(buf));
+  case kEnd:
+    return std::move(make_unique<EndResponsePacket>(buf));
   default:
     return std::unique_ptr<ResponsePacket>(nullptr);
   }

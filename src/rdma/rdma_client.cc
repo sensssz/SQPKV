@@ -1,5 +1,7 @@
 #include "rdma_client.h"
 
+#include "spdlog/spdlog.h"
+
 namespace sqpkv {
 
   const int kTimeoutInMs = 500; /* ms */
@@ -41,6 +43,11 @@ char *RDMAClient::GetRemoteBuffer() {
 }
 
 Status RDMAClient::SendToServer(size_t size, RequestHandler *request_handler) {
+  // // This is the tricky part: recv has to be posted before a send is
+  // // posted on the other side. Although we set rnr_retry_count to
+  // // infinity, if this happens a lot, there will be a huge performance
+  // // degradation. Therefore, we pre-post a receive before the send.
+  RETURN_IF_ERROR(PostReceive(context_, request_handler));
   return PostSend(context_, size, request_handler);
 }
 
@@ -55,6 +62,23 @@ void RDMAClient::Disconnect() {
   rdma_ack_cm_event(event);
   OnDisconnect(cm_id_);
   rdma_destroy_event_channel(event_channel_);
+}
+
+Status RDMAClient::CancelOustanding() {
+  struct ibv_qp_attr attr;
+  memset(&attr, 0x00, sizeof(attr));
+  attr.qp_state = IBV_QPS_SQE;
+  if (ibv_modify_qp(context_->queue_pair, &attr, IBV_QP_STATE)) {
+    spdlog::get("console")->error("Failed to modify qp.");
+    return Status::Err();
+  }
+  attr.qp_state = IBV_QPS_RTS;
+  if (ibv_modify_qp(context_->queue_pair, &attr, IBV_QP_STATE)) {
+    spdlog::get("console")->error("Failed to modify qp.");
+    return Status::Err();
+  }
+
+  return Status::Ok();
 }
 
 Status RDMAClient::OnAddressResolved(struct rdma_cm_id *id) {

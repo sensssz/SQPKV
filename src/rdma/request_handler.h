@@ -13,8 +13,8 @@ class Context;
 class RequestHandler {
 public:
   virtual ~RequestHandler() {}
-  virtual Status HandleRecvCompletion(Context *context) = 0;
-  virtual Status HandleSendCompletion(Context *context) = 0;
+  virtual Status HandleRecvCompletion(Context *context, bool successful) = 0;
+  virtual Status HandleSendCompletion(Context *context, bool successful) = 0;
 };
 
 } // namespace sqpkv

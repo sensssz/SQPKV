@@ -24,11 +24,11 @@ Status Connection::Get(const std::string &key, std::string &value) {
   if (net_status.ok()) {
     auto resp = protocol_.ReadFromServer(sockfd_);
     if (resp.ok()) {
-      auto get_all_resp = reinterpret_cast<GetResponsePacket *>(resp.GetPtr());
-      if (get_all_resp->status().ok()) {
-        value = get_all_resp->value().ToString();
+      auto get_resp = reinterpret_cast<GetResponsePacket *>(resp.GetPtr());
+      if (get_resp->status().ok()) {
+        value = get_resp->value().ToString();
       } else {
-        return get_all_resp->status();
+        return get_resp->status();
       }
     } else {
       return resp.status();
@@ -79,6 +79,25 @@ Status Connection::GetAll(const std::string &prefix, std::vector<std::string> &k
         }
       } else {
         return get_all_resp->status();
+      }
+    } else {
+      return resp.status();
+    }
+  }
+  return net_status;
+}
+
+Status Connection::End(std::string &message) {
+  EndPacket packet;
+  auto net_status = protocol_.SendPacket(sockfd_, packet);
+  if (net_status.ok()) {
+    auto resp = protocol_.ReadFromServer(sockfd_);
+    if (resp.ok()) {
+      auto end_resp = reinterpret_cast<EndResponsePacket *>(resp.GetPtr());
+      if (end_resp->status().ok()) {
+        message = end_resp->message().ToString();
+      } else {
+        return end_resp->status();
       }
     } else {
       return resp.status();

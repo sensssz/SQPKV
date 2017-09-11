@@ -1,11 +1,18 @@
 #include "sharding_proxy_worker.h"
+#include "exponential_speculator.h"
 #include "protocol/net_utils.h"
 #include "protocol/protocol.h"
 #include "sqpkv/common.h"
 
+#include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
 
+#include <algorithm>
+
 #include <unistd.h>
+
+DEFINE_bool(sqp_enabled, false, "Whether or not to enable speculative query processing.");
+DEFINE_int32(num_speculations, 3, "Number of speculations to generate.");
 
 namespace sqpkv {
 
@@ -46,9 +53,69 @@ Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocks
   return status;
 }
 
+Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data, RequestHandler *request_handler) {
+  int shard_id = sharding_policy_->GetShardId(key);
+  auto &shard_client = shard_server_clients_[shard_id];
+  memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
+  auto status = shard_client.SendToServer(data.size_, request_handler);
+  // The response will be sent back to the client by the request handler.
+  if (status.err()) {
+    spdlog::get("console")->error("Error forwarding request to server: " + status.message());
+  }
+  return status;
+}
+
+PrefetchCache *ShardingProxyWorker::GetFreeCache() {
+  for (auto &cache : prefetch_caches_) {
+    if (cache->IsAvailableForNewRequests()) {
+      return cache.get();
+    }
+  }
+  prefetch_caches_.push_back(make_unique<PrefetchCache>());
+  return prefetch_caches_.back().get();
+}
+
+std::vector<SqpRequestHandler *> ShardingProxyWorker::GetFreeSqpRequestHandlers(size_t num_handlers) {
+  std::vector<SqpRequestHandler *> free_handlers;
+  for (auto &handler : sqp_handlers_) {
+    if (!handler->IsAvailable()) {
+      continue;
+    }
+    free_handlers.push_back(handler.get());
+    if (free_handlers.size() == num_handlers) {
+      break;
+    }
+  }
+  while (free_handlers.size() < num_handlers) {
+    sqp_handlers_.push_back(make_unique<SqpRequestHandler>());
+    free_handlers.push_back(sqp_handlers_.back().get());
+  }
+  return std::move(free_handlers);
+}
+
+void ShardingProxyWorker::DoSpeculation(const std::string &key) {
+  if (!FLAGS_sqp_enabled) {
+    return;
+  }
+  speculations_ = speculator_->Speculate(key, FLAGS_num_speculations);
+  current_prefetch_cache_ = GetFreeCache();
+  auto sqp_handlers = GetFreeSqpRequestHandlers(speculations_.size());
+  size_t i = 0;
+  for (auto &speculation : speculations_) {
+    auto sqp_handler = sqp_handlers[i];
+    spdlog::get("console")->debug("Speculating {}", speculation);
+    sqp_handler->OnHandleNewRequest(speculation, current_prefetch_cache_);
+    GetPacket packet(speculation);
+    auto data = packet.ToBinary();
+    ForwardPacket(rocksdb::Slice(speculation), data, sqp_handler);
+    i++;
+  }
+}
+
 void ShardingProxyWorker::HandleClient() {
   Protocol protocol;
   Status status;
+  uint32_t total_requests = 0;
   while (status.ok()) {
     auto packet = protocol.ReadFromClient(client_fd_);
     if (packet.err()) {
@@ -62,9 +129,23 @@ void ShardingProxyWorker::HandleClient() {
     case kGet:
       {
         GetPacket *get = reinterpret_cast<GetPacket *>(packet.GetPtr());
-        rocksdb::Slice key = get->key();
-        const rocksdb::Slice &data = packet->ToBinary();
-        status = ForwardPacket(key, data);
+        rocksdb::Slice key_slice = get->key();
+        std::string key = key_slice.ToString();
+        spdlog::get("console")->debug("New request get {}", key);
+        if (std::find(speculations_.begin(), speculations_.end(), key) != speculations_.end()) {
+          spdlog::get("console")->debug("Speculation hits");
+          current_prefetch_cache_->SetRealKey(key, client_fd_, speculations_.size());
+        } else {
+          spdlog::get("console")->debug("Speculation misses, sending another request to the shard server.");
+          if (current_prefetch_cache_ != nullptr) {
+            current_prefetch_cache_->SetRealKey(key, client_fd_, speculations_.size());
+          }
+          const rocksdb::Slice &data = packet->ToBinary();
+          status = ForwardPacket(key_slice, data);
+          total_requests++;
+        }
+        DoSpeculation(key);
+        total_requests += speculations_.size();
       }
       break;
     case kPut:
@@ -101,6 +182,13 @@ void ShardingProxyWorker::HandleClient() {
         status = protocol.SendPacket(client_fd_, get_all_resp);
       }
       break;
+    case kEnd:
+      {
+        auto message = "Number of requests sent to server: " + std::to_string(total_requests);
+        EndResponsePacket resp_packet(message);
+        status = protocol.SendPacket(client_fd_, resp_packet);
+      }
+      break;
     default:
       status = Status::Err("Unsupported operation");
       break;
@@ -116,8 +204,12 @@ ShardingProxyWorker::ShardingProxyWorker(int client_fd, std::unique_ptr<Sharding
     client_fd_(client_fd), request_handler_(std::move(request_handler)),
     shard_server_clients_(std::move(shard_server_clients)),
     sharding_policy_(std::unique_ptr<ShardingPolicy>(
-                     new RoundRobinShardingPolicy(shard_server_clients_.size()))) {
+                     new RoundRobinShardingPolicy(&key_splitter_, shard_server_clients_.size()))),
+    current_prefetch_cache_(nullptr) {
   thread_ = std::thread(&ShardingProxyWorker::HandleClient, this);
+  if (FLAGS_sqp_enabled) {
+    speculator_.reset(new ExponentialSpeculator(&key_splitter_));
+  }
 }
 
 void ShardingProxyWorker::Stop() {

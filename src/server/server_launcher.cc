@@ -77,7 +77,7 @@ void ServerLauncher::OpenDb() {
   options.OptimizeLevelStyleCompaction();
   options.create_if_missing = true;
   options.prefix_extractor.reset(NewTablePrefixTransform());
-  std::string kv_path = FLAGS_kv_path + std::to_string(world_rank_);
+  std::string kv_path = FLAGS_kv_path;
   spdlog::get("console")->debug("Opening db {}", kv_path);
   rocksdb::Status s = rocksdb::DB::Open(options, kv_path, &db_);
   if (!s.ok()) {
@@ -261,7 +261,7 @@ int ServerLauncher::ProxyMain() {
 }
 
 int ServerLauncher::ShardMain() {
-  auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_);
+  auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_, shard_id_);
   sqpkv::RDMAServer server(request_handler.get());
   server.Initialize();
   int port = server.port();

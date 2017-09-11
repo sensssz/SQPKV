@@ -15,12 +15,14 @@ namespace sqpkv {
 
 class PrintRequestHandler : public RequestHandler {
 public:
-  virtual StatusOr<size_t> HandleRecvCompletion(const char *in_buffer, char *out_buffer) {
-    spdlog::get("console")->info("Server response: {}", in_buffer);
-    return make_unique<size_t>(0);
+  virtual Status HandleRecvCompletion(Context *context, bool successful) override {
+    spdlog::get("console")->info("Server response: {}", context->recv_region);
+    return Status::Ok();
   }
 
-  virtual void HandleSendCompletion(const char *buffer) {}
+  virtual Status HandleSendCompletion(Context *context, bool successful) override {
+    return RDMAConnection::PostReceive(context, this);
+  }
 };
 
 } // namespace sqpkv

@@ -11,7 +11,10 @@ namespace sqpkv {
 ShardingProxyRequestHandler::ShardingProxyRequestHandler(int client_fd, size_t num_shards) :
     client_fd_(client_fd), num_shards_(num_shards), num_shards_returning_all_keys_(0) {}
 
-Status ShardingProxyRequestHandler::HandleRecvCompletion(Context *context) {
+Status ShardingProxyRequestHandler::HandleRecvCompletion(Context *context, bool successful) {
+  if (!successful) {
+    return Status::Ok();
+  }
   char *in_buffer = context->recv_region;
   uint32_t payload_size = *(reinterpret_cast<const uint32_t *>(in_buffer));
   // This is a response packet
@@ -39,8 +42,8 @@ Status ShardingProxyRequestHandler::HandleRecvCompletion(Context *context) {
   return Status::Ok();
 }
 
-Status ShardingProxyRequestHandler::HandleSendCompletion(Context *context) {
-  return RDMAConnection::PostRecv(context, this);
+Status ShardingProxyRequestHandler::HandleSendCompletion(Context *context, bool successful) {
+  return Status::Ok();
 }
 
 std::vector<std::string> &&ShardingProxyRequestHandler::all_keys() {

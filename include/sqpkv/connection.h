@@ -16,6 +16,7 @@ public:
   Status Put(const std::string &key, const std::string &value);
   Status Delete(const std::string &key);
   Status GetAll(const std::string &key, std::vector<std::string> &keys);
+  Status End(std::string &message);
 
   void Close();
 private:

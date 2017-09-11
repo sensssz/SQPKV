@@ -2,17 +2,28 @@
 #include "protocol/packet.h"
 #include "sqpkv/common.h"
 
+#include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
+
+#include <chrono>
+
+DEFINE_string(latency_file, "latency", "Path of the latency file.");
 
 namespace sqpkv {
 
-KvRequestHandler::KvRequestHandler(rocksdb::DB *db) : db_(db) {}
+KvRequestHandler::KvRequestHandler(rocksdb::DB *db, int shard_id) : db_(db), shard_id_(shard_id) {
+  latency_file_.open(FLAGS_latency_file + std::to_string(shard_id_));
+}
 
-Status KvRequestHandler::HandleRecvCompletion(Context *context) {
+Status KvRequestHandler::HandleRecvCompletion(Context *context, bool successful) {
+  if (!successful) {
+    return Status::Ok();
+  }
   char *in_buffer = context->recv_region;
   char *out_buffer = context->send_region;
   auto packet = CommandPacketFactory::CreateCommandPacket(in_buffer);
   size_t size = 0;
+  auto start = std::chrono::high_resolution_clock::now();
   switch (packet->GetOp()) {
   case kGet:
     {
@@ -22,8 +33,6 @@ Status KvRequestHandler::HandleRecvCompletion(Context *context) {
       auto get_status = db_->Get(rocksdb::ReadOptions(), key, &value);
       spdlog::get("console")->debug("Status is {}", get_status.ToString());
       GetResponsePacket get_resp(get_status, value, out_buffer);
-      auto data = get_resp.ToBinary();
-      assert(*(reinterpret_cast<const uint32_t *>(data.data_)) + 4 == data.size_);
       size = get_resp.ToBinary().size_;
     }
     break;
@@ -65,14 +74,20 @@ Status KvRequestHandler::HandleRecvCompletion(Context *context) {
   default:
     break;
   }
+  auto end = std::chrono::high_resolution_clock::now();
+  auto latency = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  latency_file_ << latency << std::endl;
   if (size > 0) {
+    // The server always listens for request before send response, so this will be called first.
+    // Therefore, it's okay to post receives from here.
+    RETURN_IF_ERROR(RDMAConnection::PostReceive(context, this));
     return RDMAConnection::PostSend(context, size, this);
   }
   return Status::Ok();
 }
 
-Status KvRequestHandler::HandleSendCompletion(Context *context) {
-  return RDMAConnection::PostReceive(context, this);
+Status KvRequestHandler::HandleSendCompletion(Context *context, bool successful) {
+  return Status::Ok();
 }
 
 } // namespace sqpkv

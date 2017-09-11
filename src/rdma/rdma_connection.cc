@@ -5,7 +5,8 @@
 
 namespace sqpkv {
 
-const int kMaxBufferSize = kMaxNetPacketSize + 4;
+// 16MB
+const int kMaxBufferSize = 1.6e+7;
 
 Status RDMAConnection::OnConnection(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Connection established");
@@ -45,21 +46,22 @@ void RDMAConnection::OnWorkCompletion(struct ibv_wc *wc) {
     context->request_handlers.pop_front();
   }
 
+  bool successful = true;
   if (wc->status != IBV_WC_SUCCESS) {
     spdlog::get("console")->error("OnWorkCompletion: status is not success: {}", ibv_wc_status_str(wc->status));
-    return;
+    successful = false;
   }
 
   if (wc->opcode & IBV_WC_RECV) {
     if (request_handler == nullptr) {
       return;
     }
-    request_handler->HandleRecvCompletion(context);
+    request_handler->HandleRecvCompletion(context, successful);
   } else if (wc->opcode == IBV_WC_SEND) {
     if (request_handler == nullptr) {
       PostReceive(context, nullptr);
     } else {
-      request_handler->HandleSendCompletion(context);
+      request_handler->HandleSendCompletion(context, successful);
     }
   }
 }
@@ -79,6 +81,23 @@ void RDMAConnection::PollCompletionQueue(Context *context) {
       OnWorkCompletion(&wc);
     }
   }
+}
+
+Status RDMAConnection::PostReceive(Context *context) {
+  struct ibv_recv_wr wr, *bad_wr = nullptr;
+  struct ibv_sge sge;
+
+  wr.wr_id = reinterpret_cast<uintptr_t>(context);
+  wr.next = nullptr;
+  wr.sg_list = &sge;
+  wr.num_sge = 1;
+
+  sge.addr = reinterpret_cast<uintptr_t>(context->recv_region);
+  sge.length = kMaxBufferSize;
+  sge.lkey = context->recv_mr->lkey;
+
+  ERROR_IF_NON_ZERO(ibv_post_recv(context->queue_pair, &wr, &bad_wr));
+  return Status::Ok();
 }
 
 Status RDMAConnection::PostReceive(Context *context, RequestHandler *request_handler) {

@@ -25,6 +25,14 @@ find_package( Zstd REQUIRED )
 find_package( gflags REQUIRED )
 find_package( rdma REQUIRED )
 
+set(ROCKSDB_LIB
+    ${ZLIB_LIBRARIES}
+    ${BZIP2_LIBRARIES}
+    ${ROCKSDB_LIBRARY}
+    ${SNAPPY_LIBRARY}
+    ${LZ4_LIBRARY}
+    ${ZSTD_LIBRARY})
+
 set(RDMA_SRCS
     src/rdma/rdma_connection.cc
     src/rdma/rdma_client.cc
@@ -37,14 +45,18 @@ set(PROTOCOL_SRCS
     src/protocol/status.cc)
 
 set(SERVER_SRCS
+    src/server/exponential_speculator.cc
+    src/server/key_splitter.cc
     src/server/kv_request_handler.cc
     src/server/main.cc
-    src/server/server.cc
+    src/server/prefetch_cache.cc
     src/server/server_launcher.cc
+    src/server/server.cc
     src/server/sharding_policy.cc
     src/server/sharding_proxy_request_handler.cc
     src/server/sharding_proxy_worker.cc
     src/server/sharding_proxy_worker_factory.cc
+    src/server/sqp_request_handler.cc
     src/server/table_prefix_transform.cc)
 
 set(CONNECTOR_SRCS
@@ -54,18 +66,18 @@ set(CONNECTOR_SRCS
 set(CLIENT_SRCS
     src/client/main.cc)
 
+set(EXPONENTIAL_SRCS
+    src/client/exponential_client.cc
+    src/client/exponential_distribution.cc
+    src/client/random_generator.cc)
+
 add_library(sqpkv_connector SHARED
     ${CONNECTOR_SRCS})
     
 add_executable(sqpkv_server ${RDMA_SRCS} ${PROTOCOL_SRCS} ${SERVER_SRCS})
 target_link_libraries(sqpkv_server
     ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -74,12 +86,17 @@ add_executable(sqpkv_client ${CLIENT_SRCS})
 target_link_libraries(sqpkv_client
     sqpkv_connector
     ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
+    ${GFLAGS_LIBRARY}
+    ${RDMA_LIBRARY}
+    ${IBVERBS_LIBRARY} )
+
+
+add_executable(exponential_client ${EXPONENTIAL_SRCS})
+target_link_libraries(exponential_client
+    sqpkv_connector
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -90,12 +107,7 @@ add_executable(test_server
     src/protocol/status.cc)
 target_link_libraries(test_server
     ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
@@ -106,12 +118,7 @@ add_executable(test_client
     src/protocol/status.cc)
 target_link_libraries(test_client
     ${CMAKE_THREAD_LIBS_INIT}
-    ${ZLIB_LIBRARIES}
-    ${BZIP2_LIBRARIES}
-    ${ROCKSDB_LIBRARY}
-    ${SNAPPY_LIBRARY}
-    ${LZ4_LIBRARY}
-    ${ZSTD_LIBRARY}
+    ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
