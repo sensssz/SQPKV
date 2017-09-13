@@ -7,6 +7,7 @@
 
 #include <spdlog/spdlog.h>
 
+#include <atomic>
 #include <chrono>
 #include <list>
 #include <mutex>
@@ -72,11 +73,9 @@ public:
   struct ibv_mr *recv_mr;
   char *send_region;
   struct ibv_mr *send_mr;
+  std::atomic<int> unsignaled_sends;
   
   std::thread cq_poller_thread;
-  std::list<RequestHandler *> request_handlers;
-  std::list<std::chrono::time_point<std::chrono::high_resolution_clock>> starts;
-  std::mutex list_mutex;
 };
 
 class RDMAConnection {
@@ -94,7 +93,7 @@ protected:
   virtual Status OnConnection(struct rdma_cm_id *id);
   virtual Status OnDisconnect(struct rdma_cm_id *id);
   
-  static void OnWorkCompletion(struct ibv_wc *wc);
+  static void OnWorkCompletion(Context *context, struct ibv_wc *wc);
   static void PollCompletionQueue(Context *context);
 
   Status OnEvent(struct rdma_cm_event *event);

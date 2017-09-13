@@ -7,6 +7,7 @@ namespace sqpkv {
 
 // 16MB
 const int kMaxBufferSize = 1.6e+7;
+const int kQueueDepth = 2048;
 
 Status RDMAConnection::OnConnection(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Connection established");
@@ -37,14 +38,8 @@ Status RDMAConnection::OnEvent(struct rdma_cm_event *event) {
   }
 }
 
-void RDMAConnection::OnWorkCompletion(struct ibv_wc *wc) {
-  Context *context = reinterpret_cast<Context *>(wc->wr_id);
-  RequestHandler *request_handler = nullptr;
-  {
-    std::unique_lock<std::mutex> l(context->list_mutex);
-    request_handler = context->request_handlers.front();
-    context->request_handlers.pop_front();
-  }
+void RDMAConnection::OnWorkCompletion(Context *context, struct ibv_wc *wc) {
+  RequestHandler *request_handler = reinterpret_cast<RequestHandler *>(wc->wr_id);
 
   bool successful = true;
   if (wc->status != IBV_WC_SUCCESS) {
@@ -53,16 +48,9 @@ void RDMAConnection::OnWorkCompletion(struct ibv_wc *wc) {
   }
 
   if (wc->opcode & IBV_WC_RECV) {
-    if (request_handler == nullptr) {
-      return;
-    }
     request_handler->HandleRecvCompletion(context, successful);
   } else if (wc->opcode == IBV_WC_SEND) {
-    if (request_handler == nullptr) {
-      PostReceive(context, nullptr);
-    } else {
-      request_handler->HandleSendCompletion(context, successful);
-    }
+    request_handler->HandleSendCompletion(context, successful);
   }
 }
 
@@ -78,33 +66,16 @@ void RDMAConnection::PollCompletionQueue(Context *context) {
     RETURN_IF_NON_ZERO(ibv_req_notify_cq(ev_cq, 0));
 
     while (ibv_poll_cq(cq, 1, &wc) > 0) {
-      OnWorkCompletion(&wc);
+      OnWorkCompletion(context, &wc);
     }
   }
-}
-
-Status RDMAConnection::PostReceive(Context *context) {
-  struct ibv_recv_wr wr, *bad_wr = nullptr;
-  struct ibv_sge sge;
-
-  wr.wr_id = reinterpret_cast<uintptr_t>(context);
-  wr.next = nullptr;
-  wr.sg_list = &sge;
-  wr.num_sge = 1;
-
-  sge.addr = reinterpret_cast<uintptr_t>(context->recv_region);
-  sge.length = kMaxBufferSize;
-  sge.lkey = context->recv_mr->lkey;
-
-  ERROR_IF_NON_ZERO(ibv_post_recv(context->queue_pair, &wr, &bad_wr));
-  return Status::Ok();
 }
 
 Status RDMAConnection::PostReceive(Context *context, RequestHandler *request_handler) {
   struct ibv_recv_wr wr, *bad_wr = nullptr;
   struct ibv_sge sge;
 
-  wr.wr_id = reinterpret_cast<uintptr_t>(context);
+  wr.wr_id = reinterpret_cast<uintptr_t>(request_handler);
   wr.next = nullptr;
   wr.sg_list = &sge;
   wr.num_sge = 1;
@@ -112,11 +83,6 @@ Status RDMAConnection::PostReceive(Context *context, RequestHandler *request_han
   sge.addr = reinterpret_cast<uintptr_t>(context->recv_region);
   sge.length = kMaxBufferSize;
   sge.lkey = context->recv_mr->lkey;
-
-  {
-    std::unique_lock<std::mutex> l(context->list_mutex);
-    context->request_handlers.push_back(request_handler);
-  }
   ERROR_IF_NON_ZERO(ibv_post_recv(context->queue_pair, &wr, &bad_wr));
   return Status::Ok();
 }
@@ -127,11 +93,19 @@ Status RDMAConnection::PostSend(Context *context, size_t size, RequestHandler *r
 
   memset(&wr, 0, sizeof(wr));
 
-  wr.wr_id = reinterpret_cast<uintptr_t>(context);
+  // We need to do at least one signaled send per kQueueDepth sends.
+  int send_flags = 0;
+  int num_unsignaled_sends = ++context->unsignaled_sends;
+  if (num_unsignaled_sends == kQueueDepth - 10) {
+    send_flags = IBV_SEND_SIGNALED;
+    context->unsignaled_sends = 0;
+  }
+
+  wr.wr_id = reinterpret_cast<uintptr_t>(request_handler);
   wr.opcode = IBV_WR_SEND;
   wr.sg_list = &sge;
   wr.num_sge = 1;
-  wr.send_flags = IBV_SEND_SIGNALED;
+  wr.send_flags = send_flags;
 
   sge.addr = reinterpret_cast<uintptr_t>(context->send_region);
   sge.length = size;
@@ -139,11 +113,6 @@ Status RDMAConnection::PostSend(Context *context, size_t size, RequestHandler *r
 
   while (!context->connected) {
     // Left empry.
-  }
-
-  {
-    std::unique_lock<std::mutex> l(context->list_mutex);
-    context->request_handlers.push_back(request_handler);
   }
   ERROR_IF_NON_ZERO(ibv_post_send(context->queue_pair, &wr, &bad_wr));
   return Status::Ok();
@@ -170,6 +139,7 @@ StatusOr<Context> RDMAConnection::BuildContext(struct rdma_cm_id *id) {
   id->context = context.get();
 
   RETURN_IF_ERROR(RegisterMemoryRegion(context.get()));
+  context->unsignaled_sends = 0;
 
   return std::move(context);
 }
@@ -179,10 +149,11 @@ void RDMAConnection::BuildQueuePairAttr(Context *context, struct ibv_qp_init_att
 
   attributes->send_cq = context->completion_queue;
   attributes->recv_cq = context->completion_queue;
-  attributes->qp_type = IBV_QPT_RC;
+  attributes->qp_type = IBV_QPT_UC;
+  attributes->sq_sig_all = 0;
 
-  attributes->cap.max_send_wr = 2048;
-  attributes->cap.max_recv_wr = 2048;
+  attributes->cap.max_send_wr = kQueueDepth;
+  attributes->cap.max_recv_wr = kQueueDepth;
   attributes->cap.max_send_sge = 1;
   attributes->cap.max_recv_sge = 1;
 }
