@@ -3,6 +3,7 @@
 
 #include "sqpkv/status.h"
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <unordered_map>
@@ -26,6 +27,9 @@ public:
 private:
   Status SendToClient(const char *value, int client_fd);
 
+  static std::atomic<uint32_t> global_id_;
+
+  uint32_t id_;
   std::mutex mutex_;
   int client_fd_;
   std::string real_key_;
