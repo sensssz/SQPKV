@@ -49,8 +49,11 @@ void RDMAConnection::OnWorkCompletion(Context *context, struct ibv_wc *wc) {
 
   if (wc->opcode & IBV_WC_RECV) {
     request_handler->HandleRecvCompletion(context, successful);
-  } else if (wc->opcode == IBV_WC_SEND) {
-    request_handler->HandleSendCompletion(context, successful);
+    if (context->log_latency) {
+      auto recv_end = std::chrono::high_resolution_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(recv_end - context->recv_start).count();
+      spdlog::get("console")->critical(duration);
+    }
   }
 }
 
@@ -84,6 +87,9 @@ Status RDMAConnection::PostReceive(Context *context, RequestHandler *request_han
   sge.length = kMaxBufferSize;
   sge.lkey = context->recv_mr->lkey;
   ERROR_IF_NON_ZERO(ibv_post_recv(context->queue_pair, &wr, &bad_wr));
+  if (context->log_latency) {
+    context->recv_start = std::chrono::high_resolution_clock::now();
+  }
   return Status::Ok();
 }
 
@@ -141,6 +147,8 @@ StatusOr<Context> RDMAConnection::BuildContext(struct rdma_cm_id *id) {
   RETURN_IF_ERROR(RegisterMemoryRegion(context.get()));
   context->unsignaled_sends = 0;
 
+  context->log_latency = false;
+
   return std::move(context);
 }
 
@@ -149,7 +157,7 @@ void RDMAConnection::BuildQueuePairAttr(Context *context, struct ibv_qp_init_att
 
   attributes->send_cq = context->completion_queue;
   attributes->recv_cq = context->completion_queue;
-  attributes->qp_type = IBV_QPT_UC;
+  attributes->qp_type = IBV_QPT_RC;
   attributes->sq_sig_all = 0;
 
   attributes->cap.max_send_wr = kQueueDepth;

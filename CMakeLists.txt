@@ -101,27 +101,39 @@ target_link_libraries(exponential_client
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
 
-add_executable(test_server
+add_executable(rdma_test_server
     ${RDMA_SRCS}
-    test/server.cc
+    test/rdma_server.cc
     src/protocol/status.cc)
-target_link_libraries(test_server
+target_link_libraries(rdma_test_server
     ${CMAKE_THREAD_LIBS_INIT}
     ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
  
-add_executable(test_client
+add_executable(rdma_test_client
     ${RDMA_SRCS}
-    test/client.cc
+    test/rdma_client.cc
     src/protocol/status.cc)
-target_link_libraries(test_client
+target_link_libraries(rdma_test_client
     ${CMAKE_THREAD_LIBS_INIT}
     ${ROCKSDB_LIB}
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
+
+add_executable(echo_server
+    test/echo_server.cc
+    src/protocol/net_utils.cc)
+target_link_libraries(echo_server
+    ${GFLAGS_LIBRARY} )
+ 
+add_executable(echo_client
+    test/echo_client.cc
+    src/protocol/net_utils.cc)
+target_link_libraries(echo_client
+    ${GFLAGS_LIBRARY} )
 
 file(GLOB CONNECTOR_HEADERS include/sqpkv/*.h)
 install(FILES ${CONNECTOR_HEADERS} DESTINATION include/sqpkv/)

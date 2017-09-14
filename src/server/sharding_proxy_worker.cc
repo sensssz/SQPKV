@@ -104,6 +104,7 @@ void ShardingProxyWorker::DoSpeculation(const std::string &key) {
   for (auto &speculation : speculations_) {
     auto sqp_handler = sqp_handlers[i];
     spdlog::get("console")->debug("Speculating {}", speculation);
+    current_prefetch_cache_->AddPrefetchingKey(speculation);
     sqp_handler->OnHandleNewRequest(speculation, current_prefetch_cache_);
     GetPacket packet(speculation);
     auto data = packet.ToBinary();
@@ -134,11 +135,11 @@ void ShardingProxyWorker::HandleClient() {
         spdlog::get("console")->debug("New request get {}", key);
         if (std::find(speculations_.begin(), speculations_.end(), key) != speculations_.end()) {
           spdlog::get("console")->debug("Speculation hits");
-          current_prefetch_cache_->SetRealKey(key, client_fd_, speculations_.size());
+          current_prefetch_cache_->SetRealKey(key, client_fd_);
         } else {
           spdlog::get("console")->debug("Speculation misses, sending another request to the shard server.");
           if (current_prefetch_cache_ != nullptr) {
-            current_prefetch_cache_->SetRealKey(key, client_fd_, speculations_.size());
+            current_prefetch_cache_->SetRealKey(key, client_fd_);
           }
           const rocksdb::Slice &data = packet->ToBinary();
           status = ForwardPacket(key_slice, data);

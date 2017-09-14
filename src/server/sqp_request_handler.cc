@@ -11,9 +11,9 @@ Status SqpRequestHandler::HandleRecvCompletion(Context *context, bool successful
   if (successful) {
     value = context->recv_region;
   }
-  auto s = cache_->AddNewValue(key_, value);
+  cache_->AddNewValue(key_, value);
   has_finished_ = true;
-  return s;
+  return Status::Ok();
 }
 
 Status SqpRequestHandler::HandleSendCompletion(Context *context, bool successful) {

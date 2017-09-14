@@ -76,6 +76,9 @@ public:
   std::atomic<int> unsignaled_sends;
   
   std::thread cq_poller_thread;
+
+  bool log_latency;
+  std::chrono::time_point<std::chrono::high_resolution_clock> recv_start;
 };
 
 class RDMAConnection {

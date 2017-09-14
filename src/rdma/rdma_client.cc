@@ -43,10 +43,10 @@ char *RDMAClient::GetRemoteBuffer() {
 }
 
 Status RDMAClient::SendToServer(size_t size, RequestHandler *request_handler) {
-  // // This is the tricky part: recv has to be posted before a send is
-  // // posted on the other side. Although we set rnr_retry_count to
-  // // infinity, if this happens a lot, there will be a huge performance
-  // // degradation. Therefore, we pre-post a receive before the send.
+  // This is the tricky part: recv has to be posted before a send is
+  // posted on the other side. Although we set rnr_retry_count to
+  // infinity, if this happens a lot, there will be a huge performance
+  // degradation. Therefore, we pre-post a receive before the send.
   RETURN_IF_ERROR(PostReceive(context_, request_handler));
   return PostSend(context_, size, request_handler);
 }
@@ -89,6 +89,7 @@ Status RDMAClient::OnAddressResolved(struct rdma_cm_id *id) {
     return status_or.status();
   }
   context_ = status_or.Take();
+  context_->log_latency = false;
   ERROR_IF_NON_ZERO(rdma_resolve_route(id, kTimeoutInMs));
 
   return Status::Ok();
