@@ -1,5 +1,7 @@
 #include "net_utils.h"
 
+#include <cstring>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>

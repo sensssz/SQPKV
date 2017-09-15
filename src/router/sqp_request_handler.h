@@ -1,5 +1,5 @@
-#ifndef SERVER_SQP_REQUEST_HANDLER_H_
-#define SERVER_SQP_REQUEST_HANDLER_H_
+#ifndef ROUTER_SQP_REQUEST_HANDLER_H_
+#define ROUTER_SQP_REQUEST_HANDLER_H_
 
 #include "rdma/request_handler.h"
 #include "prefetch_cache.h"
@@ -33,4 +33,4 @@ private:
 
 } // namespace sqpkv
 
-#endif // SERVER_SQP_REQUEST_HANDLER_H_
+#endif // ROUTER_SQP_REQUEST_HANDLER_H_

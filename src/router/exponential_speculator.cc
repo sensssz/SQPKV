@@ -1,9 +1,5 @@
 #include "exponential_speculator.h"
 
-#include "gflags/gflags.h"
-
-DECLARE_string(prefix_separator);
-
 namespace sqpkv {
 
 ExponentialSpeculator::ExponentialSpeculator(KeySplitter *key_splitter) :
@@ -20,5 +16,5 @@ std::vector<std::string> ExponentialSpeculator::Speculate(
   }
   return std::move(speculations);
 }
-  
+
 } // namespace sqpkv

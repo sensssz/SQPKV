@@ -1,7 +1,7 @@
-#ifndef SERVER_SHARDING_POLICY_H_
-#define SERVER_SHARDING_POLICY_H_
+#ifndef ROUTER_SHARDING_POLICY_H_
+#define ROUTER_SHARDING_POLICY_H_
 
-#include "key_splitter.h"
+#include "utils/key_splitter.h"
 
 #include "rocksdb/slice.h"
 
@@ -23,4 +23,4 @@ private:
 
 } // namespace sqpkv
 
-#endif // SERVER_SHARDING_POLICY_H_
+#endif // ROUTER_SHARDING_POLICY_H_

@@ -12,7 +12,7 @@ namespace sqpkv {
 std::atomic<uint32_t> PrefetchCache::global_id_{0};
 
 PrefetchCache::PrefetchCache() :
-    id_(global_id_.fetch_add(1)), num_finished_(0), all_fetched_(false), value_fetched_(false) {}
+    id_(global_id_.fetch_add(1)), num_finished_(0), value_fetched_(false) {}
 
 void PrefetchCache::AddNewValue(const std::string &key, const char *value) {
   spdlog::get("console")->debug("[Cache {}] Value for {} retrieved.", id_, key);
@@ -59,7 +59,7 @@ Status PrefetchCache::SetRealKey(
 }
 
 size_t PrefetchCache::AddPrefetchingKey(const std::string &key) {
-  in_use_ = false;
+  in_use_ = true;
   size_t index = key_indices_.size();
   key_indices_[key] = index;
   prefetched_values_.push_back(nullptr);
@@ -67,6 +67,7 @@ size_t PrefetchCache::AddPrefetchingKey(const std::string &key) {
 }
 
 Status PrefetchCache::SendToClient(const char *value, int client_fd) {
+  spdlog::get("console")->debug("[Cache {}] Sending result to client {}.", id_, client_fd);
   GetResponsePacket get_resp(value);
   auto data = get_resp.ToBinary();
   int rc = write(client_fd, data.data_, data.size_);

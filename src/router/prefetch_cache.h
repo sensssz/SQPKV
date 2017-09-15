@@ -1,5 +1,5 @@
-#ifndef SERVER_PREFETCH_CACHE_H_
-#define SERVER_PREFETCH_CACHE_H_
+#ifndef ROUTER_PREFETCH_CACHE_H_
+#define ROUTER_PREFETCH_CACHE_H_
 
 #include "sqpkv/status.h"
 
@@ -39,4 +39,4 @@ private:
 
 } // namespace sqpkv
 
-#endif // SERVER_PREFETCH_CACHE_H_
+#endif // ROUTER_PREFETCH_CACHE_H_

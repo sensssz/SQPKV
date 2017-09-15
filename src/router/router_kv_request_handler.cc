@@ -1,4 +1,4 @@
-#include "sharding_proxy_request_handler.h"
+#include "router_kv_request_handler.h"
 #include "protocol/packet.h"
 #include "sqpkv/common.h"
 
@@ -8,10 +8,10 @@
 
 namespace sqpkv {
 
-ShardingProxyRequestHandler::ShardingProxyRequestHandler(int client_fd, size_t num_shards) :
+RouterKvRequestHandler::RouterKvRequestHandler(int client_fd, size_t num_shards) :
     client_fd_(client_fd), num_shards_(num_shards), num_shards_returning_all_keys_(0) {}
 
-Status ShardingProxyRequestHandler::HandleRecvCompletion(Context *context, bool successful) {
+Status RouterKvRequestHandler::HandleRecvCompletion(Context *context, bool successful) {
   if (!successful) {
     return Status::Ok();
   }
@@ -42,11 +42,11 @@ Status ShardingProxyRequestHandler::HandleRecvCompletion(Context *context, bool 
   return Status::Ok();
 }
 
-Status ShardingProxyRequestHandler::HandleSendCompletion(Context *context, bool successful) {
+Status RouterKvRequestHandler::HandleSendCompletion(Context *context, bool successful) {
   return Status::Ok();
 }
 
-std::vector<std::string> &&ShardingProxyRequestHandler::all_keys() {
+std::vector<std::string> &&RouterKvRequestHandler::all_keys() {
   std::unique_lock<std::mutex> l(mutex_);
   if (num_shards_returning_all_keys_ < num_shards_) {
     cond_var_.wait(l, [this]{return num_shards_returning_all_keys_ == num_shards_; });

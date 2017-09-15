@@ -1,7 +1,7 @@
-#include "sharding_proxy_worker.h"
+#include "router_worker.h"
 #include "exponential_speculator.h"
-#include "protocol/net_utils.h"
 #include "protocol/protocol.h"
+#include "utils/net_utils.h"
 #include "sqpkv/common.h"
 
 #include "gflags/gflags.h"
@@ -16,11 +16,11 @@ DEFINE_int32(num_speculations, 3, "Number of speculations to generate.");
 
 namespace sqpkv {
 
-StatusOr<ShardingProxyWorker> ShardingProxyWorker::CreateProxy(
+StatusOr<RouterWorker> RouterWorker::CreateProxy(
   std::vector<std::string> &hostnames, std::vector<int> &ports, int proxy_port, int client_fd) {
   std::vector<RDMAClient> shard_server_clients;
   Status s;
-  auto request_handler = make_unique<ShardingProxyRequestHandler>(client_fd, hostnames.size());
+  auto request_handler = make_unique<RouterKvRequestHandler>(client_fd, hostnames.size());
   for (size_t i = 0; i < hostnames.size(); ++i) {
     std::string &hostname = hostnames[i];
     int port = ports[i];
@@ -37,11 +37,11 @@ StatusOr<ShardingProxyWorker> ShardingProxyWorker::CreateProxy(
     }
     return s;
   }
-  return std::unique_ptr<ShardingProxyWorker>(
-    new ShardingProxyWorker(client_fd, std::move(request_handler), shard_server_clients));
+  return std::unique_ptr<RouterWorker>(
+    new RouterWorker(client_fd, std::move(request_handler), shard_server_clients));
 }
 
-Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data) {
+Status RouterWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data) {
   int shard_id = sharding_policy_->GetShardId(key);
   auto &shard_client = shard_server_clients_[shard_id];
   memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
@@ -53,7 +53,7 @@ Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocks
   return status;
 }
 
-Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data, RequestHandler *request_handler) {
+Status RouterWorker::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data, RequestHandler *request_handler) {
   int shard_id = sharding_policy_->GetShardId(key);
   auto &shard_client = shard_server_clients_[shard_id];
   memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
@@ -65,7 +65,7 @@ Status ShardingProxyWorker::ForwardPacket(const rocksdb::Slice &key, const rocks
   return status;
 }
 
-PrefetchCache *ShardingProxyWorker::GetFreeCache() {
+PrefetchCache *RouterWorker::GetFreeCache() {
   for (auto &cache : prefetch_caches_) {
     if (cache->IsAvailableForNewRequests()) {
       return cache.get();
@@ -75,7 +75,7 @@ PrefetchCache *ShardingProxyWorker::GetFreeCache() {
   return prefetch_caches_.back().get();
 }
 
-std::vector<SqpRequestHandler *> ShardingProxyWorker::GetFreeSqpRequestHandlers(size_t num_handlers) {
+std::vector<SqpRequestHandler *> RouterWorker::GetFreeSqpRequestHandlers(size_t num_handlers) {
   std::vector<SqpRequestHandler *> free_handlers;
   for (auto &handler : sqp_handlers_) {
     if (!handler->IsAvailable()) {
@@ -93,7 +93,7 @@ std::vector<SqpRequestHandler *> ShardingProxyWorker::GetFreeSqpRequestHandlers(
   return std::move(free_handlers);
 }
 
-void ShardingProxyWorker::DoSpeculation(const std::string &key) {
+void RouterWorker::DoSpeculation(const std::string &key) {
   if (!FLAGS_sqp_enabled) {
     return;
   }
@@ -113,7 +113,7 @@ void ShardingProxyWorker::DoSpeculation(const std::string &key) {
   }
 }
 
-void ShardingProxyWorker::HandleClient() {
+void RouterWorker::HandleClient() {
   Protocol protocol;
   Status status;
   uint32_t total_requests = 0;
@@ -200,20 +200,20 @@ void ShardingProxyWorker::HandleClient() {
   }
 }
 
-ShardingProxyWorker::ShardingProxyWorker(int client_fd, std::unique_ptr<ShardingProxyRequestHandler> request_handler,
+RouterWorker::RouterWorker(int client_fd, std::unique_ptr<RouterKvRequestHandler> request_handler,
   std::vector<RDMAClient> &shard_server_clients) :
     client_fd_(client_fd), request_handler_(std::move(request_handler)),
     shard_server_clients_(std::move(shard_server_clients)),
     sharding_policy_(std::unique_ptr<ShardingPolicy>(
                      new RoundRobinShardingPolicy(&key_splitter_, shard_server_clients_.size()))),
     current_prefetch_cache_(nullptr) {
-  thread_ = std::thread(&ShardingProxyWorker::HandleClient, this);
+  thread_ = std::thread(&RouterWorker::HandleClient, this);
   if (FLAGS_sqp_enabled) {
     speculator_.reset(new ExponentialSpeculator(&key_splitter_));
   }
 }
 
-void ShardingProxyWorker::Stop() {
+void RouterWorker::Stop() {
   if (client_fd_ != -1) {
     close(client_fd_);
   }
@@ -225,7 +225,7 @@ void ShardingProxyWorker::Stop() {
   thread_.join();
 }
 
-ShardingProxyWorker::~ShardingProxyWorker() {
+RouterWorker::~RouterWorker() {
   Stop();
 }
 

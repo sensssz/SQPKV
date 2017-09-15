@@ -1,5 +1,5 @@
-#ifndef SERVER_SPECULATOR_H_
-#define SERVER_SPECULATOR_H_
+#ifndef ROUTER_SPECULATOR_H_
+#define ROUTER_SPECULATOR_H_
 
 #include <string>
 #include <vector>
@@ -14,4 +14,4 @@ public:
 
 } // namespace sqpkv
 
-#endif // SERVER_SPECULATOR_H_
+#endif // ROUTER_SPECULATOR_H_

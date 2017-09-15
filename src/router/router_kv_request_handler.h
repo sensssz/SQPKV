@@ -1,5 +1,5 @@
-#ifndef SERVER_SHARDING_PROXY_REQUEST_HANDLER_H_
-#define SERVER_SHARDING_PROXY_REQUEST_HANDLER_H_
+#ifndef ROUTER_ROUTER_KV_REQUEST_HANDLER_H_
+#define ROUTER_ROUTER_KV_REQUEST_HANDLER_H_
 
 #include "rdma/request_handler.h"
 
@@ -8,9 +8,9 @@
 
 namespace sqpkv {
 
-class ShardingProxyRequestHandler : public RequestHandler {
+class RouterKvRequestHandler : public RequestHandler {
 public:
-  ShardingProxyRequestHandler(int client_fd, size_t num_shards);
+  RouterKvRequestHandler(int client_fd, size_t num_shards);
   virtual Status HandleRecvCompletion(Context *context, bool successful) override;
   virtual Status HandleSendCompletion(Context *context, bool successful) override;
   std::vector<std::string> &&all_keys();
@@ -25,4 +25,4 @@ private:
 
 } // namespace sqpkv
 
-#endif // SERVER_SHARDING_PROXY_REQUEST_HANDLER_H_
+#endif // ROUTER_ROUTER_KV_REQUEST_HANDLER_H_

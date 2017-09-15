@@ -1,5 +1,5 @@
-#ifndef PROTOCOL_NET_UTILS_H_
-#define PROTOCOL_NET_UTILS_H_
+#ifndef UTILS_NET_UTILS_H_
+#define UTILS_NET_UTILS_H_
 
 #include <string>
 
@@ -9,4 +9,4 @@ int SockConnectTo(const std::string &hostname, int port);
 
 } // namespace sqpkv
 
-#endif // PROTOCOL_NET_UTILS_H_
+#endif // UTILS_NET_UTILS_H_

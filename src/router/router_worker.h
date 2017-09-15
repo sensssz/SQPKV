@@ -1,15 +1,15 @@
-#ifndef SERVER_SHARDING_PROXY_H_
-#define SERVER_SHARDING_PROXY_H_
+#ifndef ROUTER_ROUTER_WORKER_H_
+#define ROUTER_ROUTER_WORKER_H_
 
 #include "worker.h"
-#include "key_splitter.h"
 #include "prefetch_cache.h"
 #include "sharding_policy.h"
-#include "sharding_proxy_request_handler.h"
+#include "router_kv_request_handler.h"
 #include "speculator.h"
 #include "sqp_request_handler.h"
 #include "protocol/protocol.h"
 #include "rdma/rdma_client.h"
+#include "utils/key_splitter.h"
 #include "sqpkv/status.h"
 
 #include "rocksdb/slice.h"
@@ -21,18 +21,18 @@
 
 namespace sqpkv {
 
-class ShardingProxyWorker : public Worker {
+class RouterWorker : public Worker {
 public:
-  static StatusOr<ShardingProxyWorker> CreateProxy(
+  static StatusOr<RouterWorker> CreateProxy(
     std::vector<std::string> &hostnames, std::vector<int> &ports, int proxy_port, int clientfd);
 
-  ~ShardingProxyWorker();
+  ~RouterWorker();
   Status ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data, RequestHandler *request_handler);
   Status ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data);
   virtual void Stop() override;
 
 private:
-  ShardingProxyWorker(int clienfd, std::unique_ptr<ShardingProxyRequestHandler> request_handler,
+  RouterWorker(int clienfd, std::unique_ptr<RouterKvRequestHandler> request_handler,
     std::vector<RDMAClient> &shard_server_clients);
   PrefetchCache *GetFreeCache();
   std::vector<SqpRequestHandler *> GetFreeSqpRequestHandlers(size_t num_handlers);
@@ -40,7 +40,7 @@ private:
   void HandleClient();
 
   int client_fd_;
-  std::unique_ptr<ShardingProxyRequestHandler> request_handler_;
+  std::unique_ptr<RouterKvRequestHandler> request_handler_;
   std::vector<RDMAClient> shard_server_clients_;
   KeySplitter key_splitter_;
   std::unique_ptr<ShardingPolicy> sharding_policy_;
@@ -54,4 +54,4 @@ private:
 
 } // namespace sqpkv
 
-#endif // SERVER_SHARDING_PROXY_H_
+#endif // ROUTER_ROUTER_WORKER_H_

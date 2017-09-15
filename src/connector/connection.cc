@@ -1,6 +1,6 @@
 #include "sqpkv/connection.h"
 #include "sqpkv/common.h"
-#include "protocol/net_utils.h"
+#include "utils/net_utils.h"
 
 #include <cstring>
 

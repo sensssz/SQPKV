@@ -1,8 +1,8 @@
-#ifndef SERVER_EXPONENTIAL_SPECULATOR_H_
-#define SERVER_EXPONENTIAL_SPECULATOR_H_
+#ifndef ROUTER_EXPONENTIAL_SPECULATOR_H_
+#define ROUTER_EXPONENTIAL_SPECULATOR_H_
 
 #include "speculator.h"
-#include "key_splitter.h"
+#include "utils/key_splitter.h"
 
 namespace sqpkv {
 
@@ -17,4 +17,4 @@ private:
 
 } // namespace sqpkv
 
-#endif // SERVER_EXPONENTIAL_SPECULATOR_H_
+#endif // ROUTER_EXPONENTIAL_SPECULATOR_H_

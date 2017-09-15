@@ -1,5 +1,5 @@
-#ifndef SERVER_WORKER_H_
-#define SERVER_WORKER_H_
+#ifndef ROUTER_WORKER_H_
+#define ROUTER_WORKER_H_
 
 namespace sqpkv {
 
@@ -11,4 +11,4 @@ public:
 
 } // namespace sqpkv
 
-#endif // SERVER_WORKER_H_
+#endif // ROUTER_WORKER_H_

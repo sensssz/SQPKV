@@ -1,7 +1,7 @@
 #include "server_launcher.h"
 #include "kv_request_handler.h"
-#include "server.h"
-#include "sharding_proxy_worker_factory.h"
+#include "router/router_worker_factory.h"
+#include "router/server.h"
 #include "rdma/rdma_server.h"
 #include "sqpkv/common.h"
 
@@ -77,7 +77,7 @@ void ServerLauncher::OpenDb() {
   options.OptimizeLevelStyleCompaction();
   options.create_if_missing = true;
   options.prefix_extractor.reset(NewTablePrefixTransform());
-  std::string kv_path = FLAGS_kv_path;
+  std::string kv_path = FLAGS_kv_path + std::to_string(world_rank_);
   spdlog::get("console")->debug("Opening db {}", kv_path);
   rocksdb::Status s = rocksdb::DB::Open(options, kv_path, &db_);
   if (!s.ok()) {
@@ -253,7 +253,7 @@ void ServerLauncher::ExchangeRDMAPort(int port) {
 int ServerLauncher::ProxyMain() {
   ExchangeRDMAPort(0);
   auto worker_factory = std::unique_ptr<WorkerFactory>(
-    new sqpkv::ShardingProxyWorkerFactory(ip_addresses_, ports_, FLAGS_port));
+    new sqpkv::RouterWorkerFactory(ip_addresses_, ports_, FLAGS_port));
   sqpkv::Server *server = sqpkv::Server::GetInstance(std::move(worker_factory), FLAGS_port);
   server->Start();
 

@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 
   auto console = spdlog::basic_logger_mt("console", "sqpkv.log");;
   spdlog::set_pattern("[%H:%M:%S] %v");
-  auto log_level = spdlog::level::debug;
+  auto log_level = spdlog::level::err;
   spdlog::set_level(log_level);
   console->flush_on(log_level);
 

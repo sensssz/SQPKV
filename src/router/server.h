@@ -1,5 +1,5 @@
-#ifndef SERVER_SERVER_H_
-#define SERVER_SERVER_H_
+#ifndef ROUTER_SERVER_H_
+#define ROUTER_SERVER_H_
 
 #include "worker_factory.h"
 
@@ -33,4 +33,4 @@ private:
 
 }
 
-#endif // SERVER_SERVER_H_
+#endif // ROUTER_SERVER_H_

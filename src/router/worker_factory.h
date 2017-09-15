@@ -1,5 +1,5 @@
-#ifndef SERVER_WORKER_FACTORY_H_
-#define SERVER_WORKER_FACTORY_H_
+#ifndef ROUTER_WORKER_FACTORY_H_
+#define ROUTER_WORKER_FACTORY_H_
 
 #include "worker.h"
 #include "sqpkv/status.h"
@@ -16,4 +16,4 @@ public:
 } // namespace sqpkv
 
 
-#endif // SERVER_WORKER_FACTORY_H_
+#endif // ROUTER_WORKER_FACTORY_H_
