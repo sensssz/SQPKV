@@ -3,3 +3,7 @@ include/gflags
 include/rapidjson
 include/rocksdb
 include/spdlog
+include/discreterng/
+include/json.h
+latencies/
+*.py
