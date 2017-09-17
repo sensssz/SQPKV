@@ -1,6 +1,6 @@
 #include <numeric>
 
-#include "protocol/net_utils.h"
+#include "utils/net_utils.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"

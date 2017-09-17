@@ -1,7 +1,8 @@
 #include "server_launcher.h"
 #include "kv_request_handler.h"
-#include "server.h"
-#include "sharding_proxy_worker_factory.h"
+#include "router/client_request_rdma_server.h"
+#include "router/router_worker_factory.h"
+#include "router/router_socket_server.h"
 #include "rdma/rdma_server.h"
 #include "sqpkv/common.h"
 
@@ -22,8 +23,9 @@
 #include <unistd.h>
 
 DEFINE_string(kv_path, "/tmp/sqpkv", "Path of the KV store.");
-DEFINE_string(proxy_hostname, "/tmp/sqp_proxy", "File name to save the hostname of the proxy server to.");
+DEFINE_string(router_hostname, "/tmp/sqp_router", "File name to save the hostname of the router server to.");
 DEFINE_int32(port, 4242, "Port to listen to.");
+DEFINE_bool(rdma, false, "Use RDMA for client and router connection.");
 
 namespace sqpkv {
 
@@ -33,13 +35,13 @@ static rocksdb::SliceTransform *NewTablePrefixTransform() {
 
 ServerLauncher::ServerLauncher() :
     shard_id_(-1), world_size_(0), world_rank_(-1),
-    proxy_rank_(-1), db_(nullptr) {}
+    router_rank_(-1), db_(nullptr) {}
 
 int ServerLauncher::Run() {
   InitShardingConfig();
   int ret_val;
   if (shard_id_ == 0) {
-    ret_val = ProxyMain();
+    ret_val = RouterMain();
   } else {
     ret_val = ShardMain();
   }
@@ -55,12 +57,12 @@ void ServerLauncher::InitShardingConfig() {
   OpenDb();
   GetShardId();
   ShakeHands();
-  if (proxy_rank_ == -1) {
+  if (router_rank_ == -1) {
     delete db_;
     exit(EXIT_FAILURE);
   }
   if (shard_id_ == 0) {
-    spdlog::set_pattern("[Proxy] %v");
+    spdlog::set_pattern("[Router] %v");
   } else {
     spdlog::set_pattern("[Shard " + std::to_string(shard_id_) + "] %v");
   }
@@ -77,7 +79,7 @@ void ServerLauncher::OpenDb() {
   options.OptimizeLevelStyleCompaction();
   options.create_if_missing = true;
   options.prefix_extractor.reset(NewTablePrefixTransform());
-  std::string kv_path = FLAGS_kv_path;
+  std::string kv_path = FLAGS_kv_path + std::to_string(world_rank_);
   spdlog::get("console")->debug("Opening db {}", kv_path);
   rocksdb::Status s = rocksdb::DB::Open(options, kv_path, &db_);
   if (!s.ok()) {
@@ -108,9 +110,9 @@ void ServerLauncher::GetShardId() {
 
 void ServerLauncher::ShakeHands() {
   if (world_rank_ == 0) {
-    proxy_rank_ = world_rank_;
+    router_rank_ = world_rank_;
     if (shard_id_ == -1) {
-      proxy_rank_ = -1;
+      router_rank_ = -1;
     }
     id_to_rank[shard_id_] = world_rank_;
     for (int rank = 1; rank < world_size_; rank++) {
@@ -118,40 +120,40 @@ void ServerLauncher::ShakeHands() {
       MPI_Recv(&comm_shard_id, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
       spdlog::get("console")->debug("Rank 0 receives shard id {} from rank {}", comm_shard_id, rank);
       if (comm_shard_id == -1) {
-        proxy_rank_ = -1;
-      } else if (proxy_rank_ != -1 && comm_shard_id == 0) {
-        proxy_rank_ = rank;
+        router_rank_ = -1;
+      } else if (router_rank_ != -1 && comm_shard_id == 0) {
+        router_rank_ = rank;
       }
       id_to_rank[comm_shard_id] = rank;
     }
-    spdlog::get("console")->debug("Broadcasting proxy rank {} to all others", proxy_rank_);
-    MPI_Bcast(&proxy_rank_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    spdlog::get("console")->debug("Broadcasting router rank {} to all others", router_rank_);
+    MPI_Bcast(&router_rank_, 1, MPI_INT, 0, MPI_COMM_WORLD);
   } else {
     MPI_Send(&shard_id_, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&proxy_rank_, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&router_rank_, 1, MPI_INT, 0, MPI_COMM_WORLD);
   }
-  if (proxy_rank_ == -1) {
+  if (router_rank_ == -1) {
     spdlog::get("console")->error("Handshake failed due to error in shard id creation.");
     return;
   }
   auto s = db_->Put(rocksdb::WriteOptions(), "shard_id", std::to_string(world_rank_));
   int save_success = s.ok();
-  if (world_rank_ ==  proxy_rank_) {
+  if (world_rank_ ==  router_rank_) {
     for (int shard_id = 1; shard_id < world_size_; shard_id++) {
       int rank = id_to_rank[shard_id];
       int comm_save_success;
       MPI_Recv(&comm_save_success, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives save result {} from rank {}", proxy_rank_, comm_save_success, rank);
+      spdlog::get("console")->debug("Rank {} receives save result {} from rank {}", router_rank_, comm_save_success, rank);
       save_success =  comm_save_success && save_success;
     }
-    spdlog::get("console")->debug("Rank {} broadcasting save result {} to all others", proxy_rank_, save_success);
-    MPI_Bcast(&save_success, 1, MPI_INT, proxy_rank_, MPI_COMM_WORLD);
+    spdlog::get("console")->debug("Rank {} broadcasting save result {} to all others", router_rank_, save_success);
+    MPI_Bcast(&save_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
   } else {
-    MPI_Send(&save_success, 1, MPI_INT, proxy_rank_, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&save_success, 1, MPI_INT, proxy_rank_, MPI_COMM_WORLD);
+    MPI_Send(&save_success, 1, MPI_INT, router_rank_, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&save_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
   }
-  proxy_rank_ = save_success ? proxy_rank_ : -1;
-  if (proxy_rank_ == -1) {
+  router_rank_ = save_success ? router_rank_ : -1;
+  if (router_rank_ == -1) {
     spdlog::get("console")->error("Handshake failed due to error in shard id preservation.");
   }
 }
@@ -201,68 +203,77 @@ Status ServerLauncher::ResolveIpAddresses() {
   char ip_address[NI_MAXHOST];
   int ip_address_size;
   int ip_address_resolution_success = true;
-  if (world_rank_ == proxy_rank_) {
+  if (world_rank_ == router_rank_) {
     GetInfinibandIp(ip_address);
-    std::ofstream proxy_ip_address_file(FLAGS_proxy_hostname);
-    proxy_ip_address_file << ip_address << std::endl;
-    proxy_ip_address_file.close();
+    ip_address_ = std::string(ip_address);
     for (int shard_id = 1; shard_id < world_size_; shard_id++) {
       int rank = id_to_rank[shard_id];
       MPI_Recv(&ip_address_size, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives ip address size {} from rank {}", proxy_rank_, ip_address_size, rank);
+      spdlog::get("console")->debug("Rank {} receives ip address size {} from rank {}", router_rank_, ip_address_size, rank);
       if (ip_address_size == -1) {
         ip_address_resolution_success = false;
         continue;
       }
       MPI_Recv(ip_address, ip_address_size, MPI_CHAR, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives ip address {} from rank {}", proxy_rank_, ip_address, rank);
+      spdlog::get("console")->debug("Rank {} receives ip address {} from rank {}", router_rank_, ip_address, rank);
       ip_addresses_.push_back(std::string(ip_address));
     }
-    spdlog::get("console")->debug("Rank {} broadcasting ip address resolution result {} to all others", proxy_rank_, ip_address_resolution_success);
-    MPI_Bcast(&ip_address_resolution_success, 1, MPI_INT, proxy_rank_, MPI_COMM_WORLD);
+    spdlog::get("console")->debug("Rank {} broadcasting ip address resolution result {} to all others", router_rank_, ip_address_resolution_success);
+    MPI_Bcast(&ip_address_resolution_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
   } else {
     int rc = GetInfinibandIp(ip_address);
     if (rc == -1) {
       ip_address_size = -1;
-      MPI_Send(&ip_address_size, 1, MPI_INT, proxy_rank_, 0, MPI_COMM_WORLD);
+      MPI_Send(&ip_address_size, 1, MPI_INT, router_rank_, 0, MPI_COMM_WORLD);
     } else {
       ip_address_size = strlen(ip_address) + 1;
-      MPI_Send(&ip_address_size, 1, MPI_INT, proxy_rank_, 0, MPI_COMM_WORLD);
-      MPI_Send(ip_address, ip_address_size, MPI_CHAR, proxy_rank_, 0, MPI_COMM_WORLD);
+      MPI_Send(&ip_address_size, 1, MPI_INT, router_rank_, 0, MPI_COMM_WORLD);
+      MPI_Send(ip_address, ip_address_size, MPI_CHAR, router_rank_, 0, MPI_COMM_WORLD);
     }
-    MPI_Bcast(&ip_address_resolution_success, 1, MPI_INT, proxy_rank_, MPI_COMM_WORLD);
-    spdlog::get("console")->debug("Rank {} receives ip address resolution result {} from rank {}", world_rank_, ip_address_resolution_success, proxy_rank_);
+    MPI_Bcast(&ip_address_resolution_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
+    spdlog::get("console")->debug("Rank {} receives ip address resolution result {} from rank {}", world_rank_, ip_address_resolution_success, router_rank_);
   }
   return ip_address_resolution_success ? Status::Ok() : Status::Err();
 }
 
 void ServerLauncher::ExchangeRDMAPort(int port) {
-  if (world_rank_ == proxy_rank_) {
+  if (world_rank_ == router_rank_) {
     for (int shard_id = 1; shard_id < world_size_; shard_id++) {
       int rank = id_to_rank[shard_id];
       int port = -1;
       MPI_Recv(&port, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives port {} from rank {}", proxy_rank_, port, rank);
+      spdlog::get("console")->debug("Rank {} receives port {} from rank {}", router_rank_, port, rank);
       ports_.push_back(port);
     }
   } else {
-    MPI_Send(&port, 1, MPI_INT, proxy_rank_, 0, MPI_COMM_WORLD);
+    MPI_Send(&port, 1, MPI_INT, router_rank_, 0, MPI_COMM_WORLD);
   }
 }
 
-int ServerLauncher::ProxyMain() {
+int ServerLauncher::RouterMain() {
   ExchangeRDMAPort(0);
-  auto worker_factory = std::unique_ptr<WorkerFactory>(
-    new sqpkv::ShardingProxyWorkerFactory(ip_addresses_, ports_, FLAGS_port));
-  sqpkv::Server *server = sqpkv::Server::GetInstance(std::move(worker_factory), FLAGS_port);
-  server->Start();
+  std::ofstream router_ip_address_file(FLAGS_router_hostname);
+  if (FLAGS_rdma) {
+    sqpkv::ClientRequestRdmaServer server(std::move(ip_addresses_), std::move(ports_));
+    server.Initialize();
+    router_ip_address_file << ip_address_ << ' ' << server.port() << std::endl;
+    router_ip_address_file.close();
+    server.Run();
+  } else {
+    router_ip_address_file << ip_address_ << std::endl;
+    router_ip_address_file.close();
+    auto worker_factory = std::unique_ptr<WorkerFactory>(
+      new sqpkv::RouterWorkerFactory(ip_addresses_, ports_));
+    sqpkv::RouterSocketServer *server = sqpkv::RouterSocketServer::GetInstance(std::move(worker_factory), FLAGS_port);
+    server->Start();
+  }
 
   return 0;
 }
 
 int ServerLauncher::ShardMain() {
   auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_, shard_id_);
-  sqpkv::RDMAServer server(request_handler.get());
+  sqpkv::RdmaServer server(request_handler.get());
   server.Initialize();
   int port = server.port();
   ExchangeRDMAPort(port);

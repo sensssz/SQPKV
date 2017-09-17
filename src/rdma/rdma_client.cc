@@ -1,16 +1,20 @@
 #include "rdma_client.h"
+#include "worker_pool.h"
 
 #include "spdlog/spdlog.h"
 
+#include <netdb.h>
+#include <unistd.h>
+
 namespace sqpkv {
 
-  const int kTimeoutInMs = 500; /* ms */
+const int kTimeoutInMs = 500; /* ms */
 
-RDMAClient::RDMAClient(RequestHandler *request_handler, std::string hostname, int port) :
+RdmaClient::RdmaClient(RequestHandler *request_handler, std::string hostname, int port) :
     port_(port), hostname_(hostname), context_(nullptr),
     request_handler_(request_handler), cm_id_(nullptr), event_channel_(nullptr) {}
 
-Status RDMAClient::Connect() {
+Status RdmaClient::Connect() {
   struct addrinfo *addr;
   struct rdma_cm_event *event = nullptr;
 
@@ -38,11 +42,11 @@ Status RDMAClient::Connect() {
   return Status::Err();
 }
 
-char *RDMAClient::GetRemoteBuffer() {
+char *RdmaClient::GetRemoteBuffer() {
   return context_->send_region;
 }
 
-Status RDMAClient::SendToServer(size_t size, RequestHandler *request_handler) {
+Status RdmaClient::SendToServer(size_t size, RequestHandler *request_handler) {
   // This is the tricky part: recv has to be posted before a send is
   // posted on the other side. Although we set rnr_retry_count to
   // infinity, if this happens a lot, there will be a huge performance
@@ -51,7 +55,7 @@ Status RDMAClient::SendToServer(size_t size, RequestHandler *request_handler) {
   return PostSend(context_, size, request_handler);
 }
 
-void RDMAClient::Disconnect() {
+void RdmaClient::Disconnect() {
   rdma_disconnect(cm_id_);
   struct rdma_cm_event *event = nullptr;
   if (rdma_get_cm_event(event_channel_, &event) != 0) {
@@ -64,7 +68,7 @@ void RDMAClient::Disconnect() {
   rdma_destroy_event_channel(event_channel_);
 }
 
-Status RDMAClient::CancelOustanding() {
+Status RdmaClient::CancelOustanding() {
   struct ibv_qp_attr attr;
   memset(&attr, 0x00, sizeof(attr));
   attr.qp_state = IBV_QPS_SQE;
@@ -81,7 +85,7 @@ Status RDMAClient::CancelOustanding() {
   return Status::Ok();
 }
 
-Status RDMAClient::OnAddressResolved(struct rdma_cm_id *id) {
+Status RdmaClient::OnAddressResolved(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Address resolved");
 
   auto status_or = BuildContext(id);
@@ -95,7 +99,7 @@ Status RDMAClient::OnAddressResolved(struct rdma_cm_id *id) {
   return Status::Ok();
 }
 
-Status RDMAClient::OnRouteResolved(struct rdma_cm_id *id) {
+Status RdmaClient::OnRouteResolved(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Route resolved");
 
   struct rdma_conn_param cm_params;
@@ -104,7 +108,7 @@ Status RDMAClient::OnRouteResolved(struct rdma_cm_id *id) {
   return Status::Ok();
 }
 
-Status RDMAClient::OnConnectRequest(struct rdma_cm_id *id) {
+Status RdmaClient::OnConnectRequest(struct rdma_cm_id *id) {
   // For server only
   return Status::Ok();
 }

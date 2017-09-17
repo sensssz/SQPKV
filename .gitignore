@@ -1,7 +1,9 @@
 .vscode/
 include/discreterng/
 include/gflags
+include/infiniband
 include/rapidjson
+include/rdma
 include/rocksdb
 include/spdlog
 include/json.h

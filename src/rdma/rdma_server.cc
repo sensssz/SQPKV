@@ -1,14 +1,15 @@
 #include "rdma_server.h"
+#include "worker_pool.h"
 
 #include "spdlog/spdlog.h"
 
 namespace sqpkv {
 
-RDMAServer::RDMAServer(RequestHandler *request_handler) :
+RdmaServer::RdmaServer(RequestHandler *request_handler) :
     port_(-1), cm_id_(nullptr), event_channel_(nullptr),
     request_handler_(request_handler) {}
 
-Status RDMAServer::Initialize() {
+Status RdmaServer::Initialize() {
   struct sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
@@ -19,14 +20,15 @@ Status RDMAServer::Initialize() {
   ERROR_IF_NON_ZERO(rdma_listen(cm_id_, 10)); /* backlog=10 is arbitrary */
 
   port_ = ntohs(rdma_get_src_port(cm_id_));
+  WorkerPool::GetInstance().Start();
   return Status::Ok();
 }
 
-int RDMAServer::port() {
+int RdmaServer::port() {
   return port_;
 }
 
-void RDMAServer::Run() {
+void RdmaServer::Run() {
   spdlog::get("console")->debug("Running event loop on server");
   struct rdma_cm_event *event = nullptr;
   while (rdma_get_cm_event(event_channel_, &event) == 0) {
@@ -43,21 +45,21 @@ void RDMAServer::Run() {
   }
 }
 
-void RDMAServer::Stop() {
+void RdmaServer::Stop() {
   rdma_disconnect(cm_id_);
 }
 
-Status RDMAServer::OnAddressResolved(struct rdma_cm_id *id) {
+Status RdmaServer::OnAddressResolved(struct rdma_cm_id *id) {
   // For client only.
   return Status::Ok();
 }
 
-Status RDMAServer::OnRouteResolved(struct rdma_cm_id *id) {
+Status RdmaServer::OnRouteResolved(struct rdma_cm_id *id) {
   // For client only.
   return Status::Ok();
 }
 
-Status RDMAServer::OnConnectRequest(struct rdma_cm_id *id) {
+Status RdmaServer::OnConnectRequest(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Received connect request");
   auto status_or = BuildContext(id);
   if (!status_or.ok()) {

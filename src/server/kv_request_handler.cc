@@ -1,4 +1,5 @@
 #include "kv_request_handler.h"
+#include "rdma/rdma_communicator.h"
 #include "protocol/packet.h"
 #include "sqpkv/common.h"
 
@@ -80,8 +81,8 @@ Status KvRequestHandler::HandleRecvCompletion(Context *context, bool successful)
   if (size > 0) {
     // The server always listens for request before send response, so this will be called first.
     // Therefore, it's okay to post receives from here.
-    RETURN_IF_ERROR(RDMAConnection::PostReceive(context, this));
-    return RDMAConnection::PostSend(context, size, this);
+    RETURN_IF_ERROR(RdmaCommunicator::PostReceive(context, this));
+    return RdmaCommunicator::PostSend(context, size, this);
   }
   return Status::Ok();
 }

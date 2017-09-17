@@ -1,29 +1,24 @@
-#ifndef CLIENT_CONNECTION_H_
-#define CLIENT_CONNECTION_H_
+#ifndef INCLUDE_SQPKV_CONNECTION_H_
+#define INCLUDE_SQPKV_CONNECTION_H_
 
-#include "protocol/protocol.h"
+#include "sqpkv/status.h"
 
 #include <string>
+#include <vector>
 
 namespace sqpkv {
 
 class Connection {
 public:
-  static StatusOr<Connection> ConnectTo(std::string hostname, int port);
-  Connection(int sockfd);
-
-  Status Get(const std::string &key, std::string &value);
-  Status Put(const std::string &key, const std::string &value);
-  Status Delete(const std::string &key);
-  Status GetAll(const std::string &key, std::vector<std::string> &keys);
-  Status End(std::string &message);
-
-  void Close();
-private:
-  int sockfd_;
-  Protocol protocol_;
+  virtual ~Connection() {}
+  virtual Status Get(const std::string &key, std::string &value) = 0;
+  virtual Status Put(const std::string &key, const std::string &value) = 0;
+  virtual Status Delete(const std::string &key) = 0;
+  virtual Status GetAll(const std::string &key, std::vector<std::string> &keys) = 0;
+  virtual Status End(std::string &message) = 0;
+  virtual void Close() = 0;
 };
 
 } // namespace sqpkv
 
-#endif // CLIENT_CONNECTION_H_
+#endif // INCLUDE_SQPKV_CONNECTION_H_

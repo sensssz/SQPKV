@@ -1,7 +1,7 @@
 #ifndef RDMA_RDMA_SERVER_H_
 #define RDMA_RDMA_SERVER_H_
 
-#include "rdma_connection.h"
+#include "rdma_communicator.h"
 #include "request_handler.h"
 #include "sqpkv/status.h"
 
@@ -9,9 +9,9 @@
 
 namespace sqpkv {
 
-class RDMAServer : public RDMAConnection {
+class RdmaServer : public RdmaCommunicator {
 public:
-  RDMAServer(RequestHandler *request_handler);
+  RdmaServer(RequestHandler *request_handler);
   Status Initialize();
   int port();
   void Run();

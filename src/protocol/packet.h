@@ -34,6 +34,7 @@ public:
   Packet(const char *buf);
   Packet(uint32_t payload_size, char *buf);
   rocksdb::Slice ToBinary() const;
+  virtual OpCode GetOp() = 0;
 
 protected:
   uint32_t HeaderSize();
@@ -73,7 +74,6 @@ class CommandPacket : public Packet {
 public:
   CommandPacket(const char *buf);
   CommandPacket(uint32_t payload_size, char *buf);
-  virtual OpCode GetOp() = 0;
 };
 
 /**
@@ -238,6 +238,7 @@ public:
   GetResponsePacket(rocksdb::Status status, const std::string &value, char *buf=nullptr);
   GetResponsePacket(Status status, const std::string &value, char *buf);
   rocksdb::Slice value();
+  OpCode GetOp();
 
 protected:
   uint32_t HeaderSize();
@@ -255,6 +256,7 @@ public:
   PutResponsePacket(const char *buf);
   PutResponsePacket(rocksdb::Status status, char *buf=nullptr);
   PutResponsePacket(Status status, char *buf);
+  OpCode GetOp();
 };
 
 /**
@@ -266,6 +268,7 @@ public:
   DeleteResponsePacket(const char *buf);
   DeleteResponsePacket(rocksdb::Status status, char *buf=nullptr);
   DeleteResponsePacket(Status status, char *buf);
+  OpCode GetOp();
 };
 
 /**
@@ -286,6 +289,7 @@ public:
   GetAllResponsePacket(Status status, const std::vector<std::string> &keys, char *buf=nullptr);
   std::vector<rocksdb::Slice> keys();
   void AddKeys(std::vector<std::string> &keys);
+  OpCode GetOp();
 
 protected:
   uint32_t HeaderSize();
@@ -309,6 +313,7 @@ public:
   EndResponsePacket(const std::string &message, char *buf=nullptr);
   EndResponsePacket(Status status, const std::string &message, char *buf);
   rocksdb::Slice message();
+  OpCode GetOp();
 
 protected:
   uint32_t HeaderSize();

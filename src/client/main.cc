@@ -1,4 +1,4 @@
-#include "sqpkv/connection.h"
+#include "sqpkv/connection_factory.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
@@ -14,6 +14,7 @@
 DEFINE_string(server_addr_file, "/tmp/sqpkv_proxy", "File containing the address of the proxy server");
 DEFINE_string(server_addr, "127.0.0.1", "Address of the server");
 DEFINE_int32(port, 4242, "Port number of the server");
+DEFINE_bool(rdma, false, "Use RDMA connection for client and server");
 
 void Show(std::string message) {
   std::cout << message << std::endl;
@@ -104,7 +105,14 @@ int main(int argc, char *argv[]) {
   } else {
     server_addr = FLAGS_server_addr;
   }
-  auto connection = sqpkv::Connection::ConnectTo(server_addr, FLAGS_port);
+
+  sqpkv::ConnectionFactory factory;
+  sqpkv::StatusOr<sqpkv::Connection> connection;
+  if (FLAGS_rdma) {
+    connection = std::move(factory.CreateRdmaConnection(server_addr, FLAGS_port));
+  } else {
+    connection = std::move(factory.CreateSocketConnection(server_addr, FLAGS_port));
+  }
 
   if (connection.err()) {
     spdlog::get("console")->error(connection.status().ToString());

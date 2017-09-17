@@ -1,7 +1,7 @@
 #include "exponential_distribution.h"
 #include "random_generator.h"
 #include "sqpkv/common.h"
-#include "sqpkv/connection.h"
+#include "sqpkv/connection_factory.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
@@ -24,17 +24,29 @@ DEFINE_double(lambda, 1.0, "Lambda value for the exponential distribution.");
 DEFINE_uint32(max_value, 1000, "Max value for the exponential distribution.");
 DEFINE_uint32(think_time, 100, "Think time of the clinet in ms.");
 DEFINE_string(latency_file, "latency", "Name of the file containing latency data");
+DEFINE_bool(rdma, false, "Use RDMA connection for client and server");
 
 std::unique_ptr<sqpkv::Connection> CreateConnection() {
   std::string server_addr;
+  int port = FLAGS_port;
   std::ifstream addr_file(FLAGS_server_addr_file);
   if (!addr_file.fail()) {
     addr_file >> server_addr;
+    if (FLAGS_rdma) {
+      addr_file >> port;
+    }
     addr_file.close();
   } else {
     server_addr = FLAGS_server_addr;
   }
-  auto connection = sqpkv::Connection::ConnectTo(server_addr, FLAGS_port);
+
+  sqpkv::ConnectionFactory factory;
+  sqpkv::StatusOr<sqpkv::Connection> connection;
+  if (FLAGS_rdma) {
+    connection = std::move(factory.CreateRdmaConnection(server_addr, port));
+  } else {
+    connection = std::move(factory.CreateSocketConnection(server_addr, port));
+  }
 
   if (connection.err()) {
     spdlog::get("console")->error(connection.status().ToString());

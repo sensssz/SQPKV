@@ -5,30 +5,13 @@
 #  RDMA_LIBRARIES   - List of libraries when using rdmacm.
 #  RDMA_FOUND       - True if rdma found.
 
-find_path(RDMA_INCLUDE_DIR rdma/rdma_cma.h NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_INCLUDE_DIR}
-  /usr/include
-  /opt/local/include
-  /usr/local/include
-)
+find_path(RDMA_INCLUDE_DIR rdma/rdma_cma.h)
 
 set(RDMA_NAMES ${RDMA_NAMES} rdmacm)
-find_library(RDMA_LIBRARY NAMES ${RDMA_NAMES} NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_LIB_DIR}
-  /usr/local/lib
-  /opt/local/lib
-  /usr/lib
-  /usr/lib64
-)
+find_library(RDMA_LIBRARY NAMES ${RDMA_NAMES})
 
 set(IBVERBS_NAMES ${IBVERBS_NAMES} ibverbs)
-find_library(IBVERBS_LIBRARY NAMES ${IBVERBS_NAMES} NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_LIB_DIR}
-  /usr/local/lib
-  /opt/local/lib
-  /usr/lib
-  /usr/lib64
-)
+find_library(IBVERBS_LIBRARY NAMES ${IBVERBS_NAMES})
 
 if (RDMA_INCLUDE_DIR AND RDMA_LIBRARY AND IBVERBS_LIBRARY)
   set(RDMA_FOUND TRUE)

@@ -270,6 +270,10 @@ rocksdb::Slice GetResponsePacket::value() {
   return value_;
 }
 
+OpCode GetResponsePacket::GetOp() {
+  return kGet;
+}
+
 uint32_t GetResponsePacket::HeaderSize() {
   return ResponsePacket::HeaderSize() + 4;
 }
@@ -286,6 +290,10 @@ PutResponsePacket::PutResponsePacket(Status status, char *buf) :
   }
 }
 
+OpCode PutResponsePacket::GetOp() {
+  return kPut;
+}
+
 DeleteResponsePacket::DeleteResponsePacket(const char *buf) : ResponsePacket(buf) {}
 
 DeleteResponsePacket::DeleteResponsePacket(rocksdb::Status status, char *buf) :
@@ -296,6 +304,10 @@ DeleteResponsePacket::DeleteResponsePacket(Status status, char *buf) :
   if (buf != nullptr) {
     Packet::Release();
   }
+}
+
+OpCode DeleteResponsePacket::GetOp() {
+  return kDelete;
 }
 
 GetAllResponsePacket::GetAllResponsePacket(const char *buf) : ResponsePacket(buf) {
@@ -342,6 +354,10 @@ void GetAllResponsePacket::AddKeys(std::vector<std::string> &keys) {
   }
 }
 
+OpCode GetAllResponsePacket::GetOp() {
+  return kGetAll;
+}
+
 uint32_t GetAllResponsePacket::HeaderSize() {
   return ResponsePacket::HeaderSize() + 4;
 }
@@ -364,6 +380,10 @@ EndResponsePacket::EndResponsePacket(Status status, const std::string &message, 
 
 rocksdb::Slice EndResponsePacket::message() {
   return message_;
+}
+
+OpCode EndResponsePacket::GetOp() {
+  return kEnd;
 }
 
 uint32_t EndResponsePacket::HeaderSize() {

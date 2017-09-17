@@ -21,7 +21,7 @@ public:
   }
 
   virtual Status HandleSendCompletion(Context *context, bool successful) override {
-    return RDMAConnection::PostReceive(context, this);
+    return RdmaCommunicator::PostReceive(context, this);
   }
 };
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   server_addr_file >> port;
 
   auto request_handler = make_unique<sqpkv::PrintRequestHandler>();
-  sqpkv::RDMAClient client(request_handler.get(), hostname, port);
+  sqpkv::RdmaClient client(request_handler.get(), hostname, port);
   client.Connect();
 
   std::string line;
