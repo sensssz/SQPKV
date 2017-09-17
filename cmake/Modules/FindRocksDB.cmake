@@ -5,20 +5,10 @@
 #  ROCKSDB_LIBRARIES   - List of libraries when using rocksdb.
 #  ROCKSDB_FOUND       - True if rocksdb found.
 
-find_path(ROCKSDB_INCLUDE_DIR rocksdb/db.h NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_INCLUDE_DIR}
-  /usr/include
-  /opt/local/include
-  /usr/local/include
-)
+find_path(ROCKSDB_INCLUDE_DIR rocksdb/db.h)
 
 set(ROCKSDB_NAMES ${ROCKSDB_NAMES} rocksdb)
-find_library(ROCKSDB_LIBRARY NAMES ${ROCKSDB_NAMES} NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_LIB_DIR}
-  /usr/local/lib
-  /opt/local/lib
-  /usr/lib
-)
+find_library(ROCKSDB_LIBRARY NAMES ${ROCKSDB_NAMES})
 
 if (ROCKSDB_INCLUDE_DIR AND ROCKSDB_LIBRARY)
   set(ROCKSDB_FOUND TRUE)

@@ -1,4 +1,4 @@
-#include "server.h"
+#include "router_socket_server.h"
 
 #include "spdlog/spdlog.h"
 
@@ -11,23 +11,23 @@
 
 namespace sqpkv {
 
-Server *Server::instance = nullptr;
+RouterSocketServer *RouterSocketServer::instance = nullptr;
 
-Server *Server::GetInstance(std::unique_ptr<WorkerFactory> worker_factory, int port) {
+RouterSocketServer *RouterSocketServer::GetInstance(std::unique_ptr<WorkerFactory> worker_factory, int port) {
   if (port > 0 && instance == nullptr) {
-    instance = new Server(std::move(worker_factory), port);
+    instance = new RouterSocketServer(std::move(worker_factory), port);
   }
   return instance;
 }
 
-Server::Server(std::unique_ptr<WorkerFactory> worker_factory, int port) :
+RouterSocketServer::RouterSocketServer(std::unique_ptr<WorkerFactory> worker_factory, int port) :
     worker_factory_(std::move(worker_factory)), port_(port), sock_fd_(-1) {}
 
-Server::~Server() {
+RouterSocketServer::~RouterSocketServer() {
   Stop();
 }
 
-void Server::Start() {
+void RouterSocketServer::Start() {
   struct sockaddr_in serv_addr;
   sock_fd_ = socket(AF_INET, SOCK_STREAM, 0);
   if (sock_fd_ < 0) {
@@ -51,7 +51,7 @@ void Server::Start() {
   }
 }
 
-bool Server::Accept() {
+bool RouterSocketServer::Accept() {
   socklen_t clilen;
   struct sockaddr_in cli_addr;
   clilen = sizeof(cli_addr);
@@ -69,7 +69,7 @@ bool Server::Accept() {
   return true;
 }
 
-void Server::Stop() {
+void RouterSocketServer::Stop() {
   if (sock_fd_ != -1) {
     close(sock_fd_);
   }

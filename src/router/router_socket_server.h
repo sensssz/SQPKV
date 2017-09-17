@@ -1,5 +1,5 @@
-#ifndef ROUTER_SERVER_H_
-#define ROUTER_SERVER_H_
+#ifndef ROUTER_ROUTER_SOCKET_SERVER_H_
+#define ROUTER_ROUTER_SOCKET_SERVER_H_
 
 #include "worker_factory.h"
 
@@ -10,20 +10,20 @@
 
 namespace sqpkv {
 
-class Server {
+class RouterSocketServer {
 public:
-  static Server *GetInstance(
+  static RouterSocketServer *GetInstance(
     std::unique_ptr<WorkerFactory> worker_factory=std::unique_ptr<WorkerFactory>(), int port=-1);
-  ~Server();
+  ~RouterSocketServer();
 
   void Start();
   void Stop();
 
 private:
-  Server(std::unique_ptr<WorkerFactory> worker_factory_, int port);
+  RouterSocketServer(std::unique_ptr<WorkerFactory> worker_factory_, int port);
   bool Accept();
 
-  static Server *instance;
+  static RouterSocketServer *instance;
 
   std::unique_ptr<WorkerFactory> worker_factory_;
   std::vector<std::unique_ptr<Worker>> workers_;
@@ -33,4 +33,4 @@ private:
 
 }
 
-#endif // ROUTER_SERVER_H_
+#endif // ROUTER_ROUTER_SOCKET_SERVER_H_

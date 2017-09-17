@@ -5,20 +5,10 @@
 #  LZ4_LIBRARIES   - List of libraries when using lz4.
 #  LZ4_FOUND       - True if lz4 found.
 
-find_path(LZ4_INCLUDE_DIR lz4.h NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_INCLUDE_DIR}
-  /usr/include
-  /opt/local/include
-  /usr/local/include
-)
+find_path(LZ4_INCLUDE_DIR lz4.h)
 
 set(LZ4_NAMES ${LZ4_NAMES} lz4)
-find_library(LZ4_LIBRARY NAMES ${LZ4_NAMES} NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_LIB_DIR}
-  /usr/local/lib
-  /opt/local/lib
-  /usr/lib
-)
+find_library(LZ4_LIBRARY NAMES ${LZ4_NAMES})
 
 if (LZ4_INCLUDE_DIR AND LZ4_LIBRARY)
   set(LZ4_FOUND TRUE)

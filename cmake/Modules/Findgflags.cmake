@@ -5,20 +5,10 @@
 #  GFLAGS_LIBRARIES   - List of libraries when using gflags.
 #  GFLAGS_FOUND       - True if gflags found.
 
-find_path(GFLAGS_INCLUDE_DIR gflags/gflags.h NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_INCLUDE_DIR}
-  /usr/include
-  /opt/local/include
-  /usr/local/include
-)
+find_path(GFLAGS_INCLUDE_DIR gflags/gflags.h)
 
 set(GFLAGS_NAMES ${GFLAGS_NAMES} gflags)
-find_library(GFLAGS_LIBRARY NAMES ${GFLAGS_NAMES} NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_LIB_DIR}
-  /usr/local/lib
-  /opt/local/lib
-  /usr/lib
-)
+find_library(GFLAGS_LIBRARY NAMES ${GFLAGS_NAMES})
 
 if (GFLAGS_INCLUDE_DIR AND GFLAGS_LIBRARY)
   set(GFLAGS_FOUND TRUE)

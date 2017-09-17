@@ -1,26 +1,16 @@
-#ifndef RDMA_RDMA_CONNECTION_H_
-#define RDMA_RDMA_CONNECTION_H_
+#ifndef RDMA_RDMA_COMMUNICATOR_H_
+#define RDMA_RDMA_COMMUNICATOR_H_
 
+#include "context.h"
 #include "request_handler.h"
-#include "protocol/packet.h"
 #include "sqpkv/status.h"
-
-#include <spdlog/spdlog.h>
-
-#include <atomic>
-#include <chrono>
-#include <list>
-#include <mutex>
-#include <thread>
 
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 
-#include <netdb.h>
-#include <unistd.h>
-// #include <rdma/rdma_cma.h>
+#include <rdma/rdma_cma.h>
 
 namespace sqpkv {
 
@@ -56,34 +46,9 @@ namespace sqpkv {
     } \
   } while (0)
 
-class RequestHandler;
-
-class Context {
+class RdmaCommunicator {
 public:
-  struct rdma_cm_id *id;
-  struct ibv_qp *queue_pair;
-  struct ibv_context *device_context;
-  struct ibv_pd *protection_domain;
-  struct ibv_cq *completion_queue;
-  struct ibv_comp_channel *completion_channel;
-
-  bool connected;
-
-  char *recv_region;
-  struct ibv_mr *recv_mr;
-  char *send_region;
-  struct ibv_mr *send_mr;
-  std::atomic<int> unsignaled_sends;
-  
-  std::thread cq_poller_thread;
-
-  bool log_latency;
-  std::chrono::time_point<std::chrono::high_resolution_clock> recv_start;
-};
-
-class RDMAConnection {
-public:
-  virtual ~RDMAConnection() {}
+  virtual ~RdmaCommunicator() {}
 
   static Status PostReceive(Context *context, RequestHandler *request_handler);
   static Status PostSend(Context *context, size_t size, RequestHandler *request_handler);
@@ -95,19 +60,20 @@ protected:
 
   virtual Status OnConnection(struct rdma_cm_id *id);
   virtual Status OnDisconnect(struct rdma_cm_id *id);
+  virtual void DestroyConnection(void *context);
+  Status InitContext(Context *context, struct rdma_cm_id *id);
+  StatusOr<Context> BuildContext(struct rdma_cm_id *id);
   
   static void OnWorkCompletion(Context *context, struct ibv_wc *wc);
   static void PollCompletionQueue(Context *context);
 
   Status OnEvent(struct rdma_cm_event *event);
   
-  StatusOr<Context> BuildContext(struct rdma_cm_id *id);
   void BuildQueuePairAttr(Context *context, struct ibv_qp_init_attr* attributes);
   void BuildParams(struct rdma_conn_param *params);
   Status RegisterMemoryRegion(Context *context);
-  void DestroyConnection(void *context);
 };
 
 } // namespace sqpkv
 
-#endif // RDMA_RDMA_CONNECTION_H_
+#endif // RDMA_RDMA_COMMUNICATOR_H_

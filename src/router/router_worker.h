@@ -2,54 +2,28 @@
 #define ROUTER_ROUTER_WORKER_H_
 
 #include "worker.h"
-#include "prefetch_cache.h"
-#include "sharding_policy.h"
-#include "router_kv_request_handler.h"
-#include "speculator.h"
-#include "sqp_request_handler.h"
-#include "protocol/protocol.h"
-#include "rdma/rdma_client.h"
-#include "utils/key_splitter.h"
-#include "sqpkv/status.h"
+#include "client_request_router.h"
 
-#include "rocksdb/slice.h"
-
-#include <memory>
-#include <string>
 #include <thread>
-#include <vector>
 
 namespace sqpkv {
 
 class RouterWorker : public Worker {
 public:
-  static StatusOr<RouterWorker> CreateProxy(
-    std::vector<std::string> &hostnames, std::vector<int> &ports, int proxy_port, int clientfd);
+  static StatusOr<RouterWorker> CreateRouterWorker(
+    std::vector<std::string> hostnames,
+    std::vector<int> ports, int clientfd);
+  RouterWorker(int clienfd, std::unique_ptr<ClientRequestRouter> router);
 
   ~RouterWorker();
-  Status ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data, RequestHandler *request_handler);
-  Status ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data);
   virtual void Stop() override;
 
-private:
-  RouterWorker(int clienfd, std::unique_ptr<RouterKvRequestHandler> request_handler,
-    std::vector<RDMAClient> &shard_server_clients);
-  PrefetchCache *GetFreeCache();
-  std::vector<SqpRequestHandler *> GetFreeSqpRequestHandlers(size_t num_handlers);
-  void DoSpeculation(const std::string &key);
+protected:
   void HandleClient();
 
   int client_fd_;
-  std::unique_ptr<RouterKvRequestHandler> request_handler_;
-  std::vector<RDMAClient> shard_server_clients_;
-  KeySplitter key_splitter_;
-  std::unique_ptr<ShardingPolicy> sharding_policy_;
   std::thread thread_;
-  std::unique_ptr<Speculator> speculator_;
-  std::vector<std::string> speculations_;
-  PrefetchCache *current_prefetch_cache_;
-  std::vector<std::unique_ptr<PrefetchCache>> prefetch_caches_;
-  std::vector<std::unique_ptr<SqpRequestHandler>> sqp_handlers_;
+  std::unique_ptr<ClientRequestRouter> router_;
 };
 
 } // namespace sqpkv

@@ -1,14 +1,10 @@
 #ifndef RDMA_REQUEST_HANDLER_H_
 #define RDMA_REQUEST_HANDLER_H_
 
-#include "rdma_connection.h"
+#include "context.h"
 #include "sqpkv/status.h"
 
-#include <cstddef>
-
 namespace sqpkv {
-
-class Context;
 
 class RequestHandler {
 public:

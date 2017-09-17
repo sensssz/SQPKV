@@ -5,15 +5,15 @@ set(CMAKE_BUILD_TYPE Debug)
 #Bring the headers into the project
 include_directories(include)
 include_directories(src)
-include_directories($ENV{HOME}/usr/include)
+include_directories($ENV{JLOCAL}/include)
 
 set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -rdynamic -std=c++11")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -Wall -Werror -rdynamic -std=c++11")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-set(SQPKV_DEPENDENCY_INCLUDE_DIR $ENV{HOME}/usr/include)
-set(SQPKV_DEPENDENCY_LIB_DIR $ENV{HOME}/usr/lib)
+set(SQPKV_DEPENDENCY_INCLUDE_DIR $ENV{JLOCAL}/include)
+set(SQPKV_DEPENDENCY_LIB_DIR $ENV{JLOCAL}/lib)
 
 find_package( Threads REQUIRED )
 find_package( ZLIB REQUIRED)
@@ -34,9 +34,10 @@ set(ROCKSDB_LIB
     ${ZSTD_LIBRARY})
 
 set(RDMA_SRCS
-    src/rdma/rdma_connection.cc
     src/rdma/rdma_client.cc
-    src/rdma/rdma_server.cc)
+    src/rdma/rdma_communicator.cc
+    src/rdma/rdma_server.cc
+    src/rdma/worker_pool.cc)
 
 set(PROTOCOL_SRCS
     src/protocol/packet.cc
@@ -44,13 +45,20 @@ set(PROTOCOL_SRCS
     src/protocol/status.cc)
 
 set(ROUTER_SRCS
+    src/router/client_request_handler_factory.cc
+    src/router/client_request_handler.cc
+    src/router/client_request_rdma_server.cc
+    src/router/client_request_router_factory.cc
+    src/router/client_request_router.cc
     src/router/exponential_speculator.cc
     src/router/prefetch_cache.cc
+    src/router/rdma_response_sender.cc
     src/router/router_kv_request_handler.cc
+    src/router/router_socket_server.cc
     src/router/router_worker_factory.cc
     src/router/router_worker.cc
-    src/router/server.cc
     src/router/sharding_policy.cc
+    src/router/socket_response_sender.cc
     src/router/sqp_request_handler.cc)
 
 set(SERVER_SRCS
@@ -64,8 +72,12 @@ set(UTILS_SRCS
     src/utils/net_utils.cc)
 
 set(CONNECTOR_SRCS
-    src/connector/connection.cc
-    ${PROTOCOL_SRCS})
+    src/connector/connection_factory.cc
+    src/connector/rdma_connection.cc
+    src/connector/socket_connection.cc
+    src/connector/user_request_handler.cc
+    ${PROTOCOL_SRCS}
+    ${RDMA_SRCS})
 
 set(CLIENT_SRCS
     src/client/main.cc)

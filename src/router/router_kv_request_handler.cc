@@ -8,8 +8,8 @@
 
 namespace sqpkv {
 
-RouterKvRequestHandler::RouterKvRequestHandler(int client_fd, size_t num_shards) :
-    client_fd_(client_fd), num_shards_(num_shards), num_shards_returning_all_keys_(0) {}
+RouterKvRequestHandler::RouterKvRequestHandler(ResponseSender *sender, size_t num_shards) :
+    sender_(sender), num_shards_(num_shards), num_shards_returning_all_keys_(0) {}
 
 Status RouterKvRequestHandler::HandleRecvCompletion(Context *context, bool successful) {
   if (!successful) {
@@ -32,12 +32,7 @@ Status RouterKvRequestHandler::HandleRecvCompletion(Context *context, bool succe
       l.unlock();
     }
   } else {
-    int rc = write(client_fd_, in_buffer, payload_size + sizeof(uint32_t));
-    if (rc == 0) {
-      return Status::Eof();
-    } else if (rc < 0) {
-      return Status::Err();
-    }
+    return sender_->Send(in_buffer, payload_size + sizeof(uint32_t));
   }
   return Status::Ok();
 }

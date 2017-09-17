@@ -4,8 +4,9 @@
 #include <string>
 #include <memory>
 
+#include "sqpkv/common.h"
+
 #include "rocksdb/status.h"
-#include "spdlog/spdlog.h"
 
 namespace sqpkv {
 
@@ -39,9 +40,11 @@ private:
 template <typename T>
 class StatusOr {
 public:
+  StatusOr() {}
   StatusOr(std::unique_ptr<T> obj) : obj_(std::move(obj)) {
       status_ = Status::Ok();
   }
+  StatusOr(const T &value) : StatusOr(make_unique<T>(value)) {}
   StatusOr(Status status) : status_(status) {}
 
   T *operator->() {
@@ -91,7 +94,6 @@ private:
     /* Using _status below to avoid capture problems if expr is "status". */ \
     Status _status = (expr); \
     if (!_status.ok()) { \
-      spdlog::get("console")->error(_status.message()); \
       return _status; \
     } \
   } while (0)

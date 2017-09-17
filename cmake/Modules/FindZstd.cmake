@@ -5,20 +5,10 @@
 #  ZSTD_LIBRARIES   - List of libraries when using zstd.
 #  ZSTD_FOUND       - True if zstd found.
 
-find_path(ZSTD_INCLUDE_DIR zstd.h NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_INCLUDE_DIR}
-  /usr/include
-  /opt/local/include
-  /usr/local/include
-)
+find_path(ZSTD_INCLUDE_DIR zstd.h)
 
 set(ZSTD_NAMES ${ZSTD_NAMES} zstd)
-find_library(ZSTD_LIBRARY NAMES ${ZSTD_NAMES} NO_DEFAULT_PATH PATHS
-  ${SQPKV_DEPENDENCY_LIB_DIR}
-  /usr/local/lib
-  /opt/local/lib
-  /usr/lib
-)
+find_library(ZSTD_LIBRARY NAMES ${ZSTD_NAMES})
 
 if (ZSTD_INCLUDE_DIR AND ZSTD_LIBRARY)
   set(ZSTD_FOUND TRUE)

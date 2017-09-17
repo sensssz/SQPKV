@@ -30,7 +30,7 @@ void PrefetchCache::AddNewValue(const std::string &key, const char *value) {
 }
 
 Status PrefetchCache::SetRealKey(
-  const std::string &real_key, int client_fd) {
+  const std::string &real_key, ResponseSender *response_sender) {
   const char *value = nullptr;
   auto iter = key_indices_.find(real_key);
   if (iter == key_indices_.end()) {
@@ -52,7 +52,9 @@ Status PrefetchCache::SetRealKey(
     in_use_ = false;
   }
   if (value != nullptr) {
-    return SendToClient(value, client_fd);
+    GetResponsePacket get_resp(value);
+    auto data = get_resp.ToBinary();
+    return response_sender->Send(data.data_, data.size_);
   } else {
     return Status::Ok();
   }
@@ -64,20 +66,6 @@ size_t PrefetchCache::AddPrefetchingKey(const std::string &key) {
   key_indices_[key] = index;
   prefetched_values_.push_back(nullptr);
   return index;
-}
-
-Status PrefetchCache::SendToClient(const char *value, int client_fd) {
-  spdlog::get("console")->debug("[Cache {}] Sending result to client {}.", id_, client_fd);
-  GetResponsePacket get_resp(value);
-  auto data = get_resp.ToBinary();
-  int rc = write(client_fd, data.data_, data.size_);
-  if (rc == 0) {
-    return Status::Eof();
-  } else if (rc < 0) {
-    return Status::Err();
-  }
-  spdlog::get("console")->debug("[Cache {}] Result sent to client {}.", id_, client_fd);
-  return Status::Ok();
 }
 
 } // namespace spqkv

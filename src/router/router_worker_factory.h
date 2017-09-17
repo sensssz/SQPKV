@@ -10,13 +10,12 @@ namespace sqpkv {
 
 class RouterWorkerFactory : public WorkerFactory {
 public:
-  RouterWorkerFactory(std::vector<std::string> &hostnames, std::vector<int> &ports, int proxy_port);
+  RouterWorkerFactory(std::vector<std::string> &hostnames, std::vector<int> &ports);
   virtual StatusOr<Worker> CreateWorker(int client_fd) override;
 
 private:
   std::vector<std::string> hostnames_;
   std::vector<int> ports_;
-  int proxy_port_;
 };
 
 } // namespace sqpkv

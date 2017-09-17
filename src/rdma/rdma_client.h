@@ -1,14 +1,14 @@
 #ifndef RDMA_RDMA_CLIENT_H_
 #define RDMA_RDMA_CLIENT_H_
 
-#include "rdma_connection.h"
+#include "rdma_communicator.h"
 #include "request_handler.h"
 
 namespace sqpkv {
 
-class RDMAClient : public RDMAConnection {
+class RdmaClient : public RdmaCommunicator {
 public:
-  RDMAClient(RequestHandler *request_handler, std::string hostname, int port);
+  RdmaClient(RequestHandler *request_handler, std::string hostname, int port);
   Status Connect();
   char *GetRemoteBuffer();
   Status SendToServer(size_t size) {

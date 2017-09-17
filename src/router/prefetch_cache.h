@@ -1,6 +1,7 @@
 #ifndef ROUTER_PREFETCH_CACHE_H_
 #define ROUTER_PREFETCH_CACHE_H_
 
+#include "response_sender.h"
 #include "sqpkv/status.h"
 
 #include <atomic>
@@ -15,7 +16,7 @@ public:
 
   void AddNewValue(const std::string &key, const char *value);
 
-  Status SetRealKey(const std::string &real_key, int client_fd);
+  Status SetRealKey(const std::string &real_key, ResponseSender *response_sender);
 
   size_t AddPrefetchingKey(const std::string &key);
 
@@ -24,8 +25,6 @@ public:
   }
 
 private:
-  Status SendToClient(const char *value, int client_fd);
-
   static std::atomic<uint32_t> global_id_;
 
   uint32_t id_;
