@@ -1,8 +1,6 @@
 #include "rdma_communicator.h"
-#include "worker_pool.h"
-
+#include "sqpkv/worker_pool.h"
 #include "sqpkv/status.h"
-#include "sqpkv/common.h"
 #include "protocol/protocol.h"
 
 #include "spdlog/spdlog.h"
@@ -12,6 +10,10 @@ namespace sqpkv {
 // 16MB
 const int kMaxBufferSize = 1.6e+7;
 const int kQueueDepth = 2048;
+
+RdmaCommunicator::RdmaCommunicator(std::shared_ptr<WorkerPool> worker_pool) : worker_pool_(worker_pool) {
+  worker_pool->Start();
+}
 
 Status RdmaCommunicator::OnConnection(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Connection established");
@@ -57,7 +59,7 @@ void RdmaCommunicator::OnWorkCompletion(Context *context, struct ibv_wc *wc) {
       auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(recv_end - context->recv_start).count();
       spdlog::get("console")->critical(duration);
     }
-    WorkerPool::GetInstance().SubmitWorkUnit(WorkUnit{WorkType::kRecv, context, successful, request_handler});
+    worker_pool_->SubmitWorkUnit(WorkUnit{WorkType::kRecv, context, successful, request_handler});
   }
 }
 
@@ -131,14 +133,13 @@ Status RdmaCommunicator::PostSend(Context *context, size_t size, RequestHandler 
 Status RdmaCommunicator::InitContext(Context *context, struct rdma_cm_id *id) {
   context->connected = false;
   context->id = id;
-  context->protection_domain = id->pd;
   context->device_context = id->verbs;
   ERROR_IF_ZERO(context->protection_domain = ibv_alloc_pd(context->device_context));
   ERROR_IF_ZERO(context->completion_channel = ibv_create_comp_channel(context->device_context));
   ERROR_IF_ZERO(context->completion_queue =
     ibv_create_cq(context->device_context, 64, nullptr, context->completion_channel, 0));
   ERROR_IF_NON_ZERO(ibv_req_notify_cq(context->completion_queue, 0));
-  context->cq_poller_thread = std::thread(PollCompletionQueue, context);
+  context->cq_poller_thread = std::thread(&RdmaCommunicator::PollCompletionQueue, this, context);
 
   struct ibv_qp_init_attr queue_pair_attr;
   BuildQueuePairAttr(context, &queue_pair_attr);
@@ -149,17 +150,23 @@ Status RdmaCommunicator::InitContext(Context *context, struct rdma_cm_id *id) {
 
   RETURN_IF_ERROR(RegisterMemoryRegion(context));
   context->unsignaled_sends = 0;
+  context->request_handler = nullptr;
 
   context->log_latency = false;
   return Status::Ok();
 }
 
+Status RdmaCommunicator::PostInitContext(Context *context) {
+  return Status::Ok();
+}
+
 StatusOr<Context> RdmaCommunicator::BuildContext(struct rdma_cm_id *id) {
-  auto context = make_unique<Context>();
+  auto context = std::make_unique<Context>();
   auto status = InitContext(context.get(), id);
   if (!status.ok()) {
     return std::move(status);
   }
+  RETURN_IF_ERROR(PostInitContext(context.get()));
   return std::move(context);
 }
 
@@ -205,16 +212,6 @@ Status RdmaCommunicator::RegisterMemoryRegion(Context *context) {
 
 void RdmaCommunicator::DestroyConnection(void *context_void) {
   Context *context = reinterpret_cast<Context *>(context_void);
-
-  rdma_destroy_qp(context->id);
-  ibv_dereg_mr(context->recv_mr);
-  ibv_dereg_mr(context->send_mr);
-  rdma_destroy_id(context->id);
-
-  context->cq_poller_thread.detach();
-
-  delete context->recv_region;
-  delete context->send_region;
   delete context;
 }
 

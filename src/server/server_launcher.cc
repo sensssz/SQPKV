@@ -4,7 +4,7 @@
 #include "router/router_worker_factory.h"
 #include "router/router_socket_server.h"
 #include "rdma/rdma_server.h"
-#include "sqpkv/common.h"
+#include "sqpkv/worker_pool.h"
 
 #include "gflags/gflags.h"
 #include "mpi.h"
@@ -258,10 +258,12 @@ int ServerLauncher::RouterMain() {
     server.Initialize();
     router_ip_address_file << ip_address_ << ' ' << server.port() << std::endl;
     router_ip_address_file.close();
+    spdlog::get("console")->debug("Listening on port {}", server.port());
     server.Run();
   } else {
     router_ip_address_file << ip_address_ << std::endl;
     router_ip_address_file.close();
+
     auto worker_factory = std::unique_ptr<WorkerFactory>(
       new sqpkv::RouterWorkerFactory(ip_addresses_, ports_));
     sqpkv::RouterSocketServer *server = sqpkv::RouterSocketServer::GetInstance(std::move(worker_factory), FLAGS_port);
@@ -272,7 +274,7 @@ int ServerLauncher::RouterMain() {
 }
 
 int ServerLauncher::ShardMain() {
-  auto request_handler = make_unique<sqpkv::KvRequestHandler>(db_, shard_id_);
+  auto request_handler = std::make_unique<sqpkv::KvRequestHandler>(db_, shard_id_);
   sqpkv::RdmaServer server(request_handler.get());
   server.Initialize();
   int port = server.port();

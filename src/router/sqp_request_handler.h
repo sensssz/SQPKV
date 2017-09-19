@@ -1,9 +1,10 @@
 #ifndef ROUTER_SQP_REQUEST_HANDLER_H_
 #define ROUTER_SQP_REQUEST_HANDLER_H_
 
-#include "rdma/request_handler.h"
 #include "prefetch_cache.h"
+#include "sqpkv/request_handler.h"
 
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <unordered_map>
@@ -15,6 +16,9 @@ public:
   SqpRequestHandler();
   virtual Status HandleRecvCompletion(Context *context, bool successful) override;
   virtual Status HandleSendCompletion(Context *context, bool successful) override;
+  virtual std::string name() override {
+    return "SQP Request Handler";
+  }
 
   void OnHandleNewRequest(const std::string &key, PrefetchCache *cache) {
     has_finished_ = false;
@@ -28,7 +32,7 @@ public:
 private:
   std::string key_;
   PrefetchCache *cache_;
-  bool has_finished_;
+  std::atomic<bool> has_finished_;
 };
 
 } // namespace sqpkv

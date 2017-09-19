@@ -3,6 +3,7 @@
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
 
+#include <chrono>
 #include <sstream>
 
 #include <cerrno>
@@ -68,10 +69,16 @@ static void InstallSignalHandler() {
 int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-  auto console = spdlog::basic_logger_mt("console", "sqpkv.log");;
   spdlog::set_pattern("[%H:%M:%S] %v");
   auto log_level = spdlog::level::err;
   spdlog::set_level(log_level);
+  /*
+  spdlog::set_async_mode(65536,
+    spdlog::async_overflow_policy::block_retry,
+    nullptr,
+    std::chrono::seconds(2));
+    */
+  auto console = spdlog::basic_logger_mt("console", "sqpkv.log");
   console->flush_on(log_level);
 
   InstallSignalHandler();

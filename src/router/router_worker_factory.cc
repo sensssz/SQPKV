@@ -5,15 +5,15 @@ namespace sqpkv {
 
 RouterWorkerFactory::RouterWorkerFactory(
   std::vector<std::string> &hostnames, std::vector<int> &ports) :
-    hostnames_(hostnames), ports_(ports) {}
+    hostnames_(hostnames), ports_(ports),
+    worker_pool_(std::make_shared<WorkerPool>()) {}
 
 StatusOr<Worker> RouterWorkerFactory::CreateWorker(int client_fd) {
-  auto proxy = RouterWorker::CreateRouterWorker(hostnames_, ports_, client_fd);
-  if (!proxy.ok()) {
-    return proxy.status();
+  auto router = RouterWorker::CreateRouterWorker(worker_pool_, hostnames_, ports_, client_fd);
+  if (!router.ok()) {
+    return router.status();
   }
-  auto worker_ptr = proxy.Get();
-  return std::unique_ptr<Worker>(worker_ptr.release());
+  return std::unique_ptr<Worker>(router.Take());
 }
 
 } // namespace sqpkv

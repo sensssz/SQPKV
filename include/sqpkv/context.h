@@ -1,6 +1,8 @@
 #ifndef RDMA_CONTEXT_H_
 #define RDMA_CONTEXT_H_
 
+#include "sqpkv/request_handler.h"
+
 #include <atomic>
 #include <chrono>
 #include <thread>
@@ -9,8 +11,12 @@
 
 namespace sqpkv {
 
+class RequestHandler;
+
 class Context {
 public:
+  virtual ~Context();
+
   struct rdma_cm_id *id;
   struct ibv_qp *queue_pair;
   struct ibv_context *device_context;
@@ -25,6 +31,8 @@ public:
   char *send_region;
   struct ibv_mr *send_mr;
   std::atomic<int> unsignaled_sends;
+
+  RequestHandler *request_handler;
   
   std::thread cq_poller_thread;
 

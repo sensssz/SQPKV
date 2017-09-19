@@ -1,7 +1,6 @@
 #include "kv_request_handler.h"
 #include "rdma/rdma_communicator.h"
 #include "protocol/packet.h"
-#include "sqpkv/common.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"

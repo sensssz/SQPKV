@@ -2,8 +2,6 @@
 
 #include "spdlog/spdlog.h"
 
-#include "sqpkv/common.h"
-
 namespace sqpkv {
 
 static uint32_t SumSizes(const std::vector<std::string> &keys) {
@@ -394,15 +392,15 @@ std::unique_ptr<CommandPacket> CommandPacketFactory::CreateCommandPacket(const c
   OpCode op = static_cast<OpCode>(buf[4]);
   switch (op) {
   case kGet:
-    return std::move(make_unique<GetPacket>(buf));
+    return std::move(std::make_unique<GetPacket>(buf));
   case kPut:
-    return std::move(make_unique<PutPacket>(buf));
+    return std::move(std::make_unique<PutPacket>(buf));
   case kDelete:
-    return std::move(make_unique<DeletePacket>(buf));
+    return std::move(std::make_unique<DeletePacket>(buf));
   case kGetAll:
-    return std::move(make_unique<GetAllPacket>(buf));
+    return std::move(std::make_unique<GetAllPacket>(buf));
   case kEnd:
-    return std::move(make_unique<EndPacket>(buf));
+    return std::move(std::make_unique<EndPacket>(buf));
   default:
     return std::unique_ptr<CommandPacket>(nullptr);
   }
@@ -412,15 +410,15 @@ std::unique_ptr<ResponsePacket> ResponsePacketFactory::CreateResponsePacket(cons
   OpCode op = static_cast<OpCode>(buf[4]);
   switch (op) {
   case kGet:
-    return std::move(make_unique<GetResponsePacket>(buf));
+    return std::move(std::make_unique<GetResponsePacket>(buf));
   case kPut:
-    return std::move(make_unique<PutResponsePacket>(buf));
+    return std::move(std::make_unique<PutResponsePacket>(buf));
   case kDelete:
-    return std::move(make_unique<DeleteResponsePacket>(buf));
+    return std::move(std::make_unique<DeleteResponsePacket>(buf));
   case kGetAll:
-    return std::move(make_unique<GetAllResponsePacket>(buf));
+    return std::move(std::make_unique<GetAllResponsePacket>(buf));
   case kEnd:
-    return std::move(make_unique<EndResponsePacket>(buf));
+    return std::move(std::make_unique<EndResponsePacket>(buf));
   default:
     return std::unique_ptr<ResponsePacket>(nullptr);
   }

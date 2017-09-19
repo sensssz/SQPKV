@@ -4,8 +4,9 @@
 namespace sqpkv {
 
 ClientRequestHandlerFactory::ClientRequestHandlerFactory(
+  std::shared_ptr<WorkerPool> worker_pool,
   std::vector<std::string> &&hostnames, std::vector<int> &&ports) :
-  factory_(std::move(hostnames), std::move(ports)) {}
+  factory_(worker_pool, std::move(hostnames), std::move(ports)) {}
 
 StatusOr<ClientRequestHandler> ClientRequestHandlerFactory::CreateClientRequestHandler(Context *context) {
   std::unique_ptr<ResponseSender> sender(new RdmaResponseSender(context));
@@ -14,7 +15,7 @@ StatusOr<ClientRequestHandler> ClientRequestHandlerFactory::CreateClientRequestH
   if (!s.ok()) {
     return s;
   }
-  return make_unique<ClientRequestHandler>(context, std::move(status_or_router.Get()));
+  return std::make_unique<ClientRequestHandler>(context, std::move(status_or_router.Get()));
 }
 
 } // namespace sqpkv

@@ -23,7 +23,7 @@ class ClientRequestRouter {
 public:
   ClientRequestRouter(std::unique_ptr<ResponseSender> sender,
     std::unique_ptr<RouterKvRequestHandler> request_handler,
-    std::vector<RdmaClient> &&shard_server_clients);
+    std::vector<std::unique_ptr<RdmaClient>> &&shard_server_clients);
   Status ProcessClientRequestPacket(StatusOr<CommandPacket> &packet, uint32_t &total_requests);
 
 protected:
@@ -35,7 +35,7 @@ protected:
 
   std::unique_ptr<ResponseSender> sender_;
   std::unique_ptr<RouterKvRequestHandler> request_handler_;
-  std::vector<RdmaClient> shard_server_clients_;
+  std::vector<std::unique_ptr<RdmaClient>> shard_server_clients_;
   KeySplitter key_splitter_;
   std::unique_ptr<ShardingPolicy> sharding_policy_;
   std::unique_ptr<Speculator> speculator_;

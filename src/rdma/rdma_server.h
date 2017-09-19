@@ -2,7 +2,7 @@
 #define RDMA_RDMA_SERVER_H_
 
 #include "rdma_communicator.h"
-#include "request_handler.h"
+#include "sqpkv/request_handler.h"
 #include "sqpkv/status.h"
 
 #include <string>

@@ -1,6 +1,6 @@
 #include "rdma/rdma_client.h"
-#include "rdma/request_handler.h"
-#include "sqpkv/common.h"
+#include "sqpkv/worker_pool.h"
+#include "sqpkv/request_handler.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
@@ -23,6 +23,10 @@ public:
   virtual Status HandleSendCompletion(Context *context, bool successful) override {
     return RdmaCommunicator::PostReceive(context, this);
   }
+
+  virtual std::string name() {
+    return "Print Request Handler";
+  }
 };
 
 } // namespace sqpkv
@@ -37,8 +41,9 @@ int main(int argc, char *argv[]) {
   server_addr_file >> hostname;
   server_addr_file >> port;
 
-  auto request_handler = make_unique<sqpkv::PrintRequestHandler>();
-  sqpkv::RdmaClient client(request_handler.get(), hostname, port);
+  auto request_handler = std::make_unique<sqpkv::PrintRequestHandler>();
+  auto worker_pool = std::make_shared<sqpkv::WorkerPool>();
+  sqpkv::RdmaClient client(worker_pool, request_handler.get(), hostname, port);
   client.Connect();
 
   std::string line;

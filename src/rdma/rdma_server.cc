@@ -1,11 +1,12 @@
 #include "rdma_server.h"
-#include "worker_pool.h"
+#include "sqpkv/worker_pool.h"
 
 #include "spdlog/spdlog.h"
 
 namespace sqpkv {
 
 RdmaServer::RdmaServer(RequestHandler *request_handler) :
+    RdmaCommunicator(std::make_shared<WorkerPool>()),
     port_(-1), cm_id_(nullptr), event_channel_(nullptr),
     request_handler_(request_handler) {}
 
@@ -20,7 +21,6 @@ Status RdmaServer::Initialize() {
   ERROR_IF_NON_ZERO(rdma_listen(cm_id_, 10)); /* backlog=10 is arbitrary */
 
   port_ = ntohs(rdma_get_src_port(cm_id_));
-  WorkerPool::GetInstance().Start();
   return Status::Ok();
 }
 

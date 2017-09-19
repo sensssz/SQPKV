@@ -1,8 +1,8 @@
 #ifndef ROUTER_ROUTER_KV_REQUEST_HANDLER_H_
 #define ROUTER_ROUTER_KV_REQUEST_HANDLER_H_
 
-#include "rdma/request_handler.h"
 #include "response_sender.h"
+#include "sqpkv/request_handler.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -16,6 +16,9 @@ public:
   RouterKvRequestHandler(ResponseSender *sender, size_t num_shards);
   virtual Status HandleRecvCompletion(Context *context, bool successful) override;
   virtual Status HandleSendCompletion(Context *context, bool successful) override;
+  virtual std::string name() override {
+    return "Router KV Request Handler";
+  }
   std::vector<std::string> &&all_keys();
 private:
   ResponseSender *sender_;

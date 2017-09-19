@@ -1,6 +1,5 @@
 #include "router_kv_request_handler.h"
 #include "protocol/packet.h"
-#include "sqpkv/common.h"
 
 #include <cstdint>
 

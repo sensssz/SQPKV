@@ -8,8 +8,8 @@ include_directories(src)
 include_directories($ENV{JLOCAL}/include)
 
 set(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE} -ldl")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -rdynamic -std=c++11")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -Wall -Werror -rdynamic -std=c++11")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -rdynamic -std=c++17")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g -Wall -Werror -rdynamic -std=c++17")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(SQPKV_DEPENDENCY_INCLUDE_DIR $ENV{JLOCAL}/include)
@@ -34,6 +34,7 @@ set(ROCKSDB_LIB
     ${ZSTD_LIBRARY})
 
 set(RDMA_SRCS
+    src/rdma/context.cc
     src/rdma/rdma_client.cc
     src/rdma/rdma_communicator.cc
     src/rdma/rdma_server.cc
@@ -87,7 +88,7 @@ set(EXPONENTIAL_SRCS
     src/client/exponential_distribution.cc
     src/client/random_generator.cc)
 
-add_library(sqpkv_connector SHARED
+add_library(sqpkv_connector STATIC
     ${CONNECTOR_SRCS}
     ${UTILS_SRCS})
     

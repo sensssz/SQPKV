@@ -6,8 +6,8 @@
 
 namespace sqpkv {
 
-RdmaConnection::RdmaConnection(const std::string &hostname, int port) :
-    client_(nullptr, hostname, port) {}
+RdmaConnection::RdmaConnection(std::shared_ptr<WorkerPool> worker_pool, const std::string &hostname, int port) :
+    client_(worker_pool, nullptr, hostname, port) {}
 
 Status RdmaConnection::Connect() {
   return client_.Connect();

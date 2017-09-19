@@ -7,18 +7,12 @@
 
 namespace sqpkv {
 
-struct HandlerContext : public Context {
-public:
-  RequestHandler *request_handler;
-};
-
 class ClientRequestRdmaServer : public RdmaServer {
 public:
   ClientRequestRdmaServer(std::vector<std::string> &&hostnames, std::vector<int> &&ports);
 protected:
   virtual Status OnConnectRequest(struct rdma_cm_id *id) override;
-  StatusOr<HandlerContext> BuildHandlerContext(struct rdma_cm_id *id);
-  virtual void DestroyConnection(void *context);
+  virtual Status PostInitContext(Context *context) override;
 
 private:
   ClientRequestHandlerFactory factory_;

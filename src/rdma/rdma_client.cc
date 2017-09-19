@@ -1,5 +1,4 @@
 #include "rdma_client.h"
-#include "worker_pool.h"
 
 #include "spdlog/spdlog.h"
 
@@ -10,9 +9,11 @@ namespace sqpkv {
 
 const int kTimeoutInMs = 500; /* ms */
 
-RdmaClient::RdmaClient(RequestHandler *request_handler, std::string hostname, int port) :
-    port_(port), hostname_(hostname), context_(nullptr),
-    request_handler_(request_handler), cm_id_(nullptr), event_channel_(nullptr) {}
+RdmaClient::RdmaClient(std::shared_ptr<WorkerPool> worker_pool,
+  RequestHandler *request_handler, std::string hostname, int port) :
+    RdmaCommunicator(worker_pool), port_(port), hostname_(hostname),
+    context_(nullptr), request_handler_(request_handler),
+    cm_id_(nullptr), event_channel_(nullptr) {}
 
 Status RdmaClient::Connect() {
   struct addrinfo *addr;

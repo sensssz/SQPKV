@@ -4,6 +4,7 @@
 #include "worker.h"
 #include "client_request_router.h"
 
+#include <memory>
 #include <thread>
 
 namespace sqpkv {
@@ -11,6 +12,7 @@ namespace sqpkv {
 class RouterWorker : public Worker {
 public:
   static StatusOr<RouterWorker> CreateRouterWorker(
+    std::shared_ptr<WorkerPool> worker_pool,
     std::vector<std::string> hostnames,
     std::vector<int> ports, int clientfd);
   RouterWorker(int clienfd, std::unique_ptr<ClientRequestRouter> router);

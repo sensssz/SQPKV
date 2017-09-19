@@ -8,7 +8,8 @@ namespace sqpkv {
 
 class ClientRequestHandlerFactory {
 public:
-  ClientRequestHandlerFactory(std::vector<std::string> &&hostnames, std::vector<int> &&ports);
+  ClientRequestHandlerFactory(std::shared_ptr<WorkerPool> worker_pool,
+    std::vector<std::string> &&hostnames, std::vector<int> &&ports);
   StatusOr<ClientRequestHandler> CreateClientRequestHandler(Context *context);
 
 private:

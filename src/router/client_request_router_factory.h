@@ -7,11 +7,13 @@ namespace sqpkv {
 
 class ClientRequestRouterFactory {
 public:
-  ClientRequestRouterFactory(std::vector<std::string> &&hostnames, std::vector<int> &&ports);
+  ClientRequestRouterFactory(std::shared_ptr<WorkerPool> worker_pool,
+    std::vector<std::string> &&hostnames, std::vector<int> &&ports);
   StatusOr<ClientRequestRouter> CreateClientRequestRouter(
     std::unique_ptr<ResponseSender> sender);
 
 private:
+  std::shared_ptr<WorkerPool> worker_pool_;
   std::vector<std::string> hostnames_;
   std::vector<int> ports_;
 };

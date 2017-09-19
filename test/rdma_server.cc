@@ -1,6 +1,5 @@
 #include "rdma/rdma_server.h"
-#include "rdma/request_handler.h"
-#include "sqpkv/common.h"
+#include "sqpkv/request_handler.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
@@ -47,6 +46,10 @@ public:
 
   virtual Status HandleSendCompletion(Context *context, bool successful) override {
     return RdmaCommunicator::PostReceive(context, this);
+  }
+
+  virtual std::string name() {
+    return "Print Request Handler";
   }
 };
 
@@ -101,7 +104,7 @@ int main(int argc, char *argv[]) {
 
   srand (time(NULL));
 
-  auto request_handler = make_unique<sqpkv::PrintRequestHandler>();
+  auto request_handler = std::make_unique<sqpkv::PrintRequestHandler>();
   sqpkv::RdmaServer server(request_handler.get());
   server.Initialize();
 

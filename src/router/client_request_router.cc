@@ -1,8 +1,7 @@
 #include "client_request_router.h"
 #include "exponential_speculator.h"
-#include "rdma/worker_pool.h"
+#include "sqpkv/worker_pool.h"
 #include "protocol/protocol.h"
-#include "sqpkv/common.h"
 
 #include "gflags/gflags.h"
 #include "spdlog/spdlog.h"
@@ -14,10 +13,10 @@ namespace sqpkv {
 
 ClientRequestRouter::ClientRequestRouter(std::unique_ptr<ResponseSender> sender,
   std::unique_ptr<RouterKvRequestHandler> request_handler,
-  std::vector<RdmaClient> &&shard_server_clients) :
+  std::vector<std::unique_ptr<RdmaClient>> &&shard_server_clients) :
     sender_(std::move(sender)),
     request_handler_(std::move(request_handler)),
-    shard_server_clients_(shard_server_clients),
+    shard_server_clients_(std::move(shard_server_clients)),
     sharding_policy_(std::unique_ptr<ShardingPolicy>(
                      new RoundRobinShardingPolicy(&key_splitter_, shard_server_clients_.size()))),
     current_prefetch_cache_(nullptr) {
@@ -78,8 +77,8 @@ Status ClientRequestRouter::ProcessClientRequestPacket(StatusOr<CommandPacket> &
     {
       const rocksdb::Slice &data = packet->ToBinary();
       for (auto &shard_client : shard_server_clients_) {
-        memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
-        status = shard_client.SendToServer(data.size_);
+        memcpy(shard_client->GetRemoteBuffer(), data.data_, data.size_);
+        status = shard_client->SendToServer(data.size_);
         if (!status.ok()) {
           break;
         }
@@ -111,8 +110,8 @@ Status ClientRequestRouter::ProcessClientRequestPacket(StatusOr<CommandPacket> &
 Status ClientRequestRouter::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data) {
   int shard_id = sharding_policy_->GetShardId(key);
   auto &shard_client = shard_server_clients_[shard_id];
-  memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
-  auto status = shard_client.SendToServer(data.size_);
+  memcpy(shard_client->GetRemoteBuffer(), data.data_, data.size_);
+  auto status = shard_client->SendToServer(data.size_);
   // The response will be sent back to the client by the request handler.
   if (status.err()) {
     spdlog::get("console")->error("Error forwarding request to server: " + status.message());
@@ -123,8 +122,8 @@ Status ClientRequestRouter::ForwardPacket(const rocksdb::Slice &key, const rocks
 Status ClientRequestRouter::ForwardPacket(const rocksdb::Slice &key, const rocksdb::Slice &data, RequestHandler *request_handler) {
   int shard_id = sharding_policy_->GetShardId(key);
   auto &shard_client = shard_server_clients_[shard_id];
-  memcpy(shard_client.GetRemoteBuffer(), data.data_, data.size_);
-  auto status = shard_client.SendToServer(data.size_, request_handler);
+  memcpy(shard_client->GetRemoteBuffer(), data.data_, data.size_);
+  auto status = shard_client->SendToServer(data.size_, request_handler);
   // The response will be sent back to the client by the request handler.
   if (status.err()) {
     spdlog::get("console")->error("Error forwarding request to server: " + status.message());
@@ -138,7 +137,7 @@ PrefetchCache *ClientRequestRouter::GetFreeCache() {
       return cache.get();
     }
   }
-  prefetch_caches_.push_back(make_unique<PrefetchCache>());
+  prefetch_caches_.push_back(std::make_unique<PrefetchCache>());
   return prefetch_caches_.back().get();
 }
 
@@ -154,7 +153,7 @@ std::vector<SqpRequestHandler *> ClientRequestRouter::GetFreeSqpRequestHandlers(
     }
   }
   while (free_handlers.size() < num_handlers) {
-    sqp_handlers_.push_back(make_unique<SqpRequestHandler>());
+    sqp_handlers_.push_back(std::make_unique<SqpRequestHandler>());
     free_handlers.push_back(sqp_handlers_.back().get());
   }
   return std::move(free_handlers);

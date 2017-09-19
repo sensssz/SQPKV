@@ -1,6 +1,5 @@
 #include "exponential_distribution.h"
 #include "random_generator.h"
-#include "sqpkv/common.h"
 #include "sqpkv/connection_factory.h"
 
 #include "gflags/gflags.h"

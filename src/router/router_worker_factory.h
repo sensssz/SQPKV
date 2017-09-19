@@ -2,6 +2,7 @@
 #define ROUTER_ROUTER_WORKER_FACTORY_H_
 
 #include "worker_factory.h"
+#include "sqpkv/worker_pool.h"
 
 #include <string>
 #include <vector>
@@ -16,6 +17,7 @@ public:
 private:
   std::vector<std::string> hostnames_;
   std::vector<int> ports_;
+  std::shared_ptr<WorkerPool> worker_pool_;
 };
 
 } // namespace sqpkv

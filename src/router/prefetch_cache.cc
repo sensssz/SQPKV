@@ -49,12 +49,16 @@ Status PrefetchCache::SetRealKey(
     value_fetched_ = false;
     prefetched_values_.clear();
     key_indices_.clear();
-    in_use_ = false;
   }
   if (value != nullptr) {
     GetResponsePacket get_resp(value);
     auto data = get_resp.ToBinary();
-    return response_sender->Send(data.data_, data.size_);
+    auto s = response_sender->Send(data.data_, data.size_);
+    if (!value_fetched_) {
+      // Has been reset.
+      in_use_ = false;
+    }
+    return s;
   } else {
     return Status::Ok();
   }

@@ -1,8 +1,8 @@
 #ifndef CONNECTOR_SYNC_USER_REQUEST_HANDLER_H_
 #define CONNECTOR_SYNC_USER_REQUEST_HANDLER_H_
 
-#include "rdma/request_handler.h"
 #include "protocol/packet.h"
+#include "sqpkv/request_handler.h"
 
 #include <functional>
 
@@ -13,6 +13,9 @@ public:
   UserRequestHandler(std::function<void(ResponsePacket *)> &&callback);
   virtual Status HandleRecvCompletion(Context *context, bool successful);
   virtual Status HandleSendCompletion(Context *context, bool successful);
+  virtual std::string name() override {
+    return "User Request Handler";
+  }
 
 private:
   std::function<void(ResponsePacket *)> callback_;

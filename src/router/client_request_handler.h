@@ -1,9 +1,9 @@
 #ifndef ROUTER_CLIENT_REQUEST_HANDLER_H_
 #define ROUTER_CLIENT_REQUEST_HANDLER_H_
 
-#include "rdma/request_handler.h"
 #include "rdma_response_sender.h"
 #include "client_request_router.h"
+#include "sqpkv/request_handler.h"
 
 namespace sqpkv {
 
@@ -12,6 +12,9 @@ public:
   ClientRequestHandler(Context *context, std::unique_ptr<ClientRequestRouter> router);
   virtual Status HandleRecvCompletion(Context *context, bool successful);
   virtual Status HandleSendCompletion(Context *context, bool successful);
+  virtual std::string name() override {
+    return "Client Request Handler";
+  }
 
 private:
   uint32_t total_requests_;

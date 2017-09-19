@@ -1,4 +1,4 @@
-#include "worker_pool.h"
+#include "sqpkv/worker_pool.h"
 
 #include <vector>
 
@@ -10,6 +10,8 @@ DEFINE_int32(num_workers, 20, "Number of worker threads in the worker pool.");
 namespace sqpkv {
 
 WorkerPool::WorkerPool() : stop_(true), num_workers_(FLAGS_num_workers) {}
+
+WorkerPool::WorkerPool(int num_workers) : stop_(false), num_workers_(num_workers) {}
 
 WorkerPool::~WorkerPool() {
   if (!stop_) {
@@ -37,6 +39,7 @@ void WorkerPool::Start() {
 
 void WorkerPool::Stop() {
   stop_ = true;
+  cond_var_.notify_all();
   for (auto &worker : workers_) {
     worker.join();
   }
@@ -50,7 +53,10 @@ void WorkerPool::ProcessNextWorkUnit() {
     size_t num_units_to_process = 0;
     {
       std::unique_lock<std::mutex> l(queue_mutex_);
-      cond_var_.wait(l, [this]() { return !work_queue_.empty(); });
+      cond_var_.wait(l, [this]() { return stop_.load() || !work_queue_.empty(); });
+      if (stop_.load()) {
+        break;
+      }
       num_units_to_process = std::min(num_work_units, work_queue_.size());
       for (size_t i = 0; i < num_units_to_process; i++) {
         units[i] = work_queue_.front();

@@ -1,7 +1,6 @@
 #include "router_worker.h"
 #include "client_request_router_factory.h"
-#include "rdma/worker_pool.h"
-#include "sqpkv/common.h"
+#include "sqpkv/worker_pool.h"
 
 #include "spdlog/spdlog.h"
 
@@ -12,15 +11,16 @@
 namespace sqpkv {
 
 StatusOr<RouterWorker> RouterWorker::CreateRouterWorker(
-  std::vector<std::string> hostnames, std::vector<int> ports, int client_fd) {
+  std::shared_ptr<WorkerPool> worker_pool, std::vector<std::string> hostnames,
+  std::vector<int> ports, int client_fd) {
   auto sender = std::unique_ptr<ResponseSender>(new SocketResponseSender(client_fd));
-  ClientRequestRouterFactory factory(std::move(hostnames), std::move(ports));
+  ClientRequestRouterFactory factory(worker_pool, std::move(hostnames), std::move(ports));
   auto status_or_router = factory.CreateClientRequestRouter(std::move(sender));
   auto s = status_or_router.status();
   if (!s.ok()) {
     return s;
   }
-  return make_unique<RouterWorker>(client_fd, std::move(status_or_router.Get()));
+  return std::make_unique<RouterWorker>(client_fd, std::move(status_or_router.Get()));
 }
 
 RouterWorker::RouterWorker(int client_fd, std::unique_ptr<ClientRequestRouter> router) :

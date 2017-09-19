@@ -1,8 +1,8 @@
 #ifndef RDMA_WORKER_POOL_H_
 #define RDMA_WORKER_POOL_H_
 
-#include "context.h"
-#include "request_handler.h"
+#include "sqpkv/context.h"
+#include "sqpkv/request_handler.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -10,6 +10,10 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+
+#include "gflags/gflags.h"
+
+DECLARE_int32(num_workers);
 
 namespace sqpkv {
 
@@ -27,12 +31,8 @@ struct WorkUnit {
 
 class WorkerPool {
 public:
-  static WorkerPool &GetInstance() {
-    static WorkerPool worker_pool;
-    return worker_pool;
-  }
-
   WorkerPool();
+  WorkerPool(int num_workers);
   ~WorkerPool();
   void SubmitWorkUnit(WorkUnit &&work_unit);
   void Start();
