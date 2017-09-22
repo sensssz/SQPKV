@@ -47,16 +47,25 @@ namespace sqpkv {
     } \
   } while (0)
 
-  
+struct Message {
+  char *data;
+  uint64_t size;
+};
+
 class RdmaCommunicator {
 public:
-  RdmaCommunicator(std::shared_ptr<WorkerPool> worker_pool);
-  virtual ~RdmaCommunicator() {}
-
   static Status PostReceive(Context *context, RequestHandler *request_handler);
   static Status PostSend(Context *context, size_t size, RequestHandler *request_handler);
 
+  RdmaCommunicator(std::shared_ptr<WorkerPool> worker_pool);
+  virtual ~RdmaCommunicator() {}
+
+  Message RecvMessage(Context *context);
+  Status SendMessage(Context *context, uint64_t size);
+
 protected:
+  static Status PostWrite(Context *context, size_t size);
+
   virtual Status OnAddressResolved(struct rdma_cm_id *id) = 0;
   virtual Status OnRouteResolved(struct rdma_cm_id *id) = 0;
   virtual Status OnConnectRequest(struct rdma_cm_id *id) = 0;
@@ -67,12 +76,13 @@ protected:
   virtual Status InitContext(Context *context, struct rdma_cm_id *id);
   virtual Status PostInitContext(Context *context);
   virtual StatusOr<Context> BuildContext(struct rdma_cm_id *id);
-  
-  void OnWorkCompletion(Context *context, struct ibv_wc *wc);
-  void PollCompletionQueue(Context *context);
 
+  virtual void OnWorkCompletion(Context *context, struct ibv_wc *wc);
+  virtual void PollCompletionQueue(Context *context);
+
+  Status SendMr(Context *context);
   Status OnEvent(struct rdma_cm_event *event);
-  
+
   void BuildQueuePairAttr(Context *context, struct ibv_qp_init_attr* attributes);
   void BuildParams(struct rdma_conn_param *params);
   Status RegisterMemoryRegion(Context *context);

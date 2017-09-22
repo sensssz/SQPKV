@@ -26,14 +26,22 @@ public:
 
   bool connected;
 
+  // The following mrs will be used to send recv_mr to the other side.
+  // After that, they should only be used for RDMA writes.
+  // The other side will write to this region.
   char *recv_region;
   struct ibv_mr *recv_mr;
+  // Data in this buffer will be written to the other side.
   char *send_region;
   struct ibv_mr *send_mr;
+
+  // mr of the remote region.
+  struct ibv_mr remote_mr;
+
   std::atomic<int> unsignaled_sends;
 
   RequestHandler *request_handler;
-  
+
   std::thread cq_poller_thread;
 
   bool log_latency;

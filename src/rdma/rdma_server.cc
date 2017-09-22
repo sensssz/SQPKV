@@ -66,9 +66,8 @@ Status RdmaServer::OnConnectRequest(struct rdma_cm_id *id) {
     return status_or.status();
   }
 
-  auto context = status_or.Take();
-  RETURN_IF_ERROR(PostReceive(context, request_handler_));
-  
+  status_or.Take();
+
   struct rdma_conn_param cm_params;
   BuildParams(&cm_params);
   ERROR_IF_NON_ZERO(rdma_accept(id, &cm_params));

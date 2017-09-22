@@ -70,7 +70,8 @@ set(SERVER_SRCS
 
 set(UTILS_SRCS
     src/utils/key_splitter.cc
-    src/utils/net_utils.cc)
+    src/utils/net_utils.cc
+    src/utils/random_generator.cc)
 
 set(CONNECTOR_SRCS
     src/connector/connection_factory.cc
@@ -85,8 +86,7 @@ set(CLIENT_SRCS
 
 set(EXPONENTIAL_SRCS
     src/client/exponential_client.cc
-    src/client/exponential_distribution.cc
-    src/client/random_generator.cc)
+    src/client/exponential_distribution.cc)
 
 add_library(sqpkv_connector STATIC
     ${CONNECTOR_SRCS}
@@ -145,6 +145,18 @@ target_link_libraries(rdma_test_client
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
+
+add_executable(run_predicates
+    test/predicates/loader.cc
+    test/predicates/main.cc
+    test/predicates/useracct.cc
+    test/predicates/utils.cc
+    ${UTILS_SRCS})
+target_link_libraries(run_predicates
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ROCKSDB_LIB}
+    ${GFLAGS_LIBRARY}
+    ${RDMA_LIBRARY} )
 
 add_executable(echo_server
     test/echo_server.cc

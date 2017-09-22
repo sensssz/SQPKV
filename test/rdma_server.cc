@@ -41,11 +41,13 @@ public:
     size_t size = 20;
     gen_random(out_buffer, size);
     spdlog::get("console")->info("Random response: {}", out_buffer);
+    RdmaCommunicator::PostReceive(context, this);
     return RdmaCommunicator::PostSend(context, size, this);
   }
 
   virtual Status HandleSendCompletion(Context *context, bool successful) override {
-    return RdmaCommunicator::PostReceive(context, this);
+    // return RdmaCommunicator::PostReceive(context, this);
+    return Status::Ok();
   }
 
   virtual std::string name() {

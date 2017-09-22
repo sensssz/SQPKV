@@ -1,4 +1,4 @@
-#include "context.h"
+#include "sqpkv/context.h"
 
 #include <rdma/rdma_cma.h>
 
@@ -6,8 +6,10 @@ namespace sqpkv {
 
 Context::~Context() {
   rdma_destroy_qp(id);
+
   ibv_dereg_mr(recv_mr);
   ibv_dereg_mr(send_mr);
+
   rdma_destroy_id(id);
 
   cq_poller_thread.detach();

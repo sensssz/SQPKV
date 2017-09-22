@@ -15,9 +15,30 @@ RdmaCommunicator::RdmaCommunicator(std::shared_ptr<WorkerPool> worker_pool) : wo
   worker_pool->Start();
 }
 
+Message RdmaCommunicator::RecvMessage(Context *context) {
+  // Poll the first byte to check for new message.
+  while (*context->recv_region == 0) {
+    // Empty
+  }
+
+  // Reset the bit.
+  *context->recv_region = 0;
+  uint64_t size = *(reinterpret_cast<uint64_t *>(context->recv_region + 1));
+  char *data = context->recv_region + 1 + sizeof(uint64_t);
+  return Message{data, size};
+}
+
+Status RdmaCommunicator::SendMessage(Context *context, uint64_t size) {
+  *context->remote_region = 1;
+  *(reinterpret_cast<uint64_t *>(context->recv_region + 1)) = size;
+  return PostWrite(context, 1 + sizeof(uint64_t) + size);
+}
+
 Status RdmaCommunicator::OnConnection(struct rdma_cm_id *id) {
   spdlog::get("console")->debug("Connection established");
-  reinterpret_cast<Context *>(id->context)->connected = true;
+  auto context = reinterpret_cast<Context *>(id->context)
+  context->connected = true;
+  RETURN_IF_ERROR(SendMr(context));
   return Status::Ok();
 }
 
@@ -44,6 +65,12 @@ Status RdmaCommunicator::OnEvent(struct rdma_cm_event *event) {
   }
 }
 
+Status RdmaCommunicator::SendMr(Context *context) {
+  size_t mr_size = sizeof(struct ibv_mr);
+  memcpy(context->send_region, context->recv_mr, mr_size);
+  return PostSend(context, mr_size, nullptr);
+}
+
 void RdmaCommunicator::OnWorkCompletion(Context *context, struct ibv_wc *wc) {
   RequestHandler *request_handler = reinterpret_cast<RequestHandler *>(wc->wr_id);
 
@@ -59,7 +86,7 @@ void RdmaCommunicator::OnWorkCompletion(Context *context, struct ibv_wc *wc) {
       auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(recv_end - context->recv_start).count();
       spdlog::get("console")->critical(duration);
     }
-    worker_pool_->SubmitWorkUnit(WorkUnit{WorkType::kRecv, context, successful, request_handler});
+    memcpy(&context->peer_mr, context->recv_region, sizeof(struct ibv_mr));
   }
 }
 
@@ -130,11 +157,45 @@ Status RdmaCommunicator::PostSend(Context *context, size_t size, RequestHandler 
   return Status::Ok();
 }
 
+Status RdmaCommunicator::PostWrite(Context *context, size_t size) {
+  struct ibv_send_wr wr, *bad_wr = nullptr;
+  struct ibv_sge sge;
+
+  memset(&wr, 0, sizeof(wr));
+
+  // We need to do at least one signaled send per kQueueDepth sends.
+  int send_flags = 0;
+  int num_unsignaled_sends = ++context->unsignaled_sends;
+  if (num_unsignaled_sends == kQueueDepth - 10) {
+    send_flags = IBV_SEND_SIGNALED;
+    context->unsignaled_sends = 0;
+  }
+
+  wr.opcode = IBV_WR_RDMA_WRITE;
+  wr.sg_list = &sge;
+  wr.num_sge = 1;
+  wr.send_flags = send_flags;
+  wr.wr.rdma.remote_addr = (uintptr_t)conn->peer_mr.addr;
+  wr.wr.rdma.rkey = conn->peer_mr.rkey;
+
+  sge.addr = reinterpret_cast<uintptr_t>(context->send_region);
+  sge.length = size;
+  sge.lkey = context->send_mr->lkey;
+
+  while (!context->connected) {
+    // Left empry.
+  }
+  ERROR_IF_NON_ZERO(ibv_post_send(context->queue_pair, &wr, &bad_wr));
+  return Status::Ok();
+}
+
 Status RdmaCommunicator::InitContext(Context *context, struct rdma_cm_id *id) {
   context->connected = false;
   context->id = id;
   context->device_context = id->verbs;
-  ERROR_IF_ZERO(context->protection_domain = ibv_alloc_pd(context->device_context));
+  if (context->device_context == nullptr) {
+    ERROR_IF_ZERO(context->protection_domain = ibv_alloc_pd(context->device_context));
+  }
   ERROR_IF_ZERO(context->completion_channel = ibv_create_comp_channel(context->device_context));
   ERROR_IF_ZERO(context->completion_queue =
     ibv_create_cq(context->device_context, 64, nullptr, context->completion_channel, 0));
@@ -167,6 +228,7 @@ StatusOr<Context> RdmaCommunicator::BuildContext(struct rdma_cm_id *id) {
     return std::move(status);
   }
   RETURN_IF_ERROR(PostInitContext(context.get()));
+  RETURN_IF_ERROR(PostReceive(context.get(), nullptr));
   return std::move(context);
 }
 
@@ -187,19 +249,20 @@ void RdmaCommunicator::BuildQueuePairAttr(Context *context, struct ibv_qp_init_a
 void RdmaCommunicator::BuildParams(struct rdma_conn_param *params) {
   memset(params, 0, sizeof(*params));
 
-  params->initiator_depth = params->responder_resources = 7;
-  params->rnr_retry_count = 7; /* infinite retry */
+  params->initiator_depth = params->responder_resources = 5;
+  params->rnr_retry_count = 5; /* infinite retry */
 }
 
 Status RdmaCommunicator::RegisterMemoryRegion(Context *context) {
-  context->recv_region = new char[kMaxBufferSize];
-  context->send_region = new char[kMaxBufferSize];
+  const size_t mr_size = sizeof(struct ibv_mr);
+  context->recv_region = new char[mr_size];
+  context->send_region = new char[mr_size];
 
   ERROR_IF_ZERO(context->recv_mr = ibv_reg_mr(
     context->protection_domain,
     context->recv_region,
     kMaxBufferSize,
-    IBV_ACCESS_LOCAL_WRITE));
+    IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ));
 
   ERROR_IF_ZERO(context->send_mr = ibv_reg_mr(
     context->protection_domain,
