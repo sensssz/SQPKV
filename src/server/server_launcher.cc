@@ -80,7 +80,7 @@ void ServerLauncher::OpenDb() {
   options.create_if_missing = true;
   options.prefix_extractor.reset(NewTablePrefixTransform());
   std::string kv_path = FLAGS_kv_path + std::to_string(world_rank_);
-  spdlog::get("console")->debug("Opening db {}", kv_path);
+  // spdlog::get("console")->debug("Opening db {}", kv_path);
   rocksdb::Status s = rocksdb::DB::Open(options, kv_path, &db_);
   if (!s.ok()) {
     spdlog::get("console")->error(s.ToString());
@@ -97,13 +97,13 @@ void ServerLauncher::GetShardId() {
   auto s = db_->Get(rocksdb::ReadOptions(), shard_id_key, &shard_id_value);
   if (!s.ok()) {
     if (s.IsNotFound()) {
-      spdlog::get("console")->debug("No shard id found in the kv store");
+      // spdlog::get("console")->debug("No shard id found in the kv store");
       shard_id_ = world_rank_;
     } else {
       shard_id_ = -1;
     }
   } else {
-    spdlog::get("console")->debug("Got shard id from kv store: {}", shard_id_value);
+    // spdlog::get("console")->debug("Got shard id from kv store: {}", shard_id_value);
     shard_id_ = stoi(shard_id_value);
   }
 }
@@ -118,7 +118,7 @@ void ServerLauncher::ShakeHands() {
     for (int rank = 1; rank < world_size_; rank++) {
       int comm_shard_id;
       MPI_Recv(&comm_shard_id, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank 0 receives shard id {} from rank {}", comm_shard_id, rank);
+      // spdlog::get("console")->debug("Rank 0 receives shard id {} from rank {}", comm_shard_id, rank);
       if (comm_shard_id == -1) {
         router_rank_ = -1;
       } else if (router_rank_ != -1 && comm_shard_id == 0) {
@@ -126,7 +126,7 @@ void ServerLauncher::ShakeHands() {
       }
       id_to_rank[comm_shard_id] = rank;
     }
-    spdlog::get("console")->debug("Broadcasting router rank {} to all others", router_rank_);
+    // spdlog::get("console")->debug("Broadcasting router rank {} to all others", router_rank_);
     MPI_Bcast(&router_rank_, 1, MPI_INT, 0, MPI_COMM_WORLD);
   } else {
     MPI_Send(&shard_id_, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
@@ -143,10 +143,10 @@ void ServerLauncher::ShakeHands() {
       int rank = id_to_rank[shard_id];
       int comm_save_success;
       MPI_Recv(&comm_save_success, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives save result {} from rank {}", router_rank_, comm_save_success, rank);
+      // spdlog::get("console")->debug("Rank {} receives save result {} from rank {}", router_rank_, comm_save_success, rank);
       save_success =  comm_save_success && save_success;
     }
-    spdlog::get("console")->debug("Rank {} broadcasting save result {} to all others", router_rank_, save_success);
+    // spdlog::get("console")->debug("Rank {} broadcasting save result {} to all others", router_rank_, save_success);
     MPI_Bcast(&save_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
   } else {
     MPI_Send(&save_success, 1, MPI_INT, router_rank_, 0, MPI_COMM_WORLD);
@@ -163,7 +163,7 @@ int ServerLauncher::GetInfinibandIp(char *host) {
   int s, n;
 
   if (getifaddrs(&ifaddr) == -1) {
-    spdlog::get("console")->debug("getifaddrs() error: {}}", strerror(errno));
+    // spdlog::get("console")->debug("getifaddrs() error: {}}", strerror(errno));
     return -1;
   }
 
@@ -183,7 +183,7 @@ int ServerLauncher::GetInfinibandIp(char *host) {
           host, NI_MAXHOST,
           NULL, 0, NI_NUMERICHOST);
       if (s != 0) {
-        spdlog::get("console")->debug("getifaddrs() error: {}}", gai_strerror(errno));
+        // spdlog::get("console")->debug("getifaddrs() error: {}}", gai_strerror(errno));
         return -1;
       }
 
@@ -194,7 +194,7 @@ int ServerLauncher::GetInfinibandIp(char *host) {
   if (ip_found) {
     return 0;
   } else {
-    spdlog::get("console")->debug("Infiniband ip address not found");
+    // spdlog::get("console")->debug("Infiniband ip address not found");
     return -1;
   }
 }
@@ -209,16 +209,16 @@ Status ServerLauncher::ResolveIpAddresses() {
     for (int shard_id = 1; shard_id < world_size_; shard_id++) {
       int rank = id_to_rank[shard_id];
       MPI_Recv(&ip_address_size, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives ip address size {} from rank {}", router_rank_, ip_address_size, rank);
+      // spdlog::get("console")->debug("Rank {} receives ip address size {} from rank {}", router_rank_, ip_address_size, rank);
       if (ip_address_size == -1) {
         ip_address_resolution_success = false;
         continue;
       }
       MPI_Recv(ip_address, ip_address_size, MPI_CHAR, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives ip address {} from rank {}", router_rank_, ip_address, rank);
+      // spdlog::get("console")->debug("Rank {} receives ip address {} from rank {}", router_rank_, ip_address, rank);
       ip_addresses_.push_back(std::string(ip_address));
     }
-    spdlog::get("console")->debug("Rank {} broadcasting ip address resolution result {} to all others", router_rank_, ip_address_resolution_success);
+    // spdlog::get("console")->debug("Rank {} broadcasting ip address resolution result {} to all others", router_rank_, ip_address_resolution_success);
     MPI_Bcast(&ip_address_resolution_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
   } else {
     int rc = GetInfinibandIp(ip_address);
@@ -231,7 +231,7 @@ Status ServerLauncher::ResolveIpAddresses() {
       MPI_Send(ip_address, ip_address_size, MPI_CHAR, router_rank_, 0, MPI_COMM_WORLD);
     }
     MPI_Bcast(&ip_address_resolution_success, 1, MPI_INT, router_rank_, MPI_COMM_WORLD);
-    spdlog::get("console")->debug("Rank {} receives ip address resolution result {} from rank {}", world_rank_, ip_address_resolution_success, router_rank_);
+    // spdlog::get("console")->debug("Rank {} receives ip address resolution result {} from rank {}", world_rank_, ip_address_resolution_success, router_rank_);
   }
   return ip_address_resolution_success ? Status::Ok() : Status::Err();
 }
@@ -242,7 +242,7 @@ void ServerLauncher::ExchangeRDMAPort(int port) {
       int rank = id_to_rank[shard_id];
       int port = -1;
       MPI_Recv(&port, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-      spdlog::get("console")->debug("Rank {} receives port {} from rank {}", router_rank_, port, rank);
+      // spdlog::get("console")->debug("Rank {} receives port {} from rank {}", router_rank_, port, rank);
       ports_.push_back(port);
     }
   } else {
@@ -258,7 +258,7 @@ int ServerLauncher::RouterMain() {
     server.Initialize();
     router_ip_address_file << ip_address_ << ' ' << server.port() << std::endl;
     router_ip_address_file.close();
-    spdlog::get("console")->debug("Listening on port {}", server.port());
+    // spdlog::get("console")->debug("Listening on port {}", server.port());
     server.Run();
   } else {
     router_ip_address_file << ip_address_ << std::endl;

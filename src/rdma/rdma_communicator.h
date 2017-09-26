@@ -47,7 +47,7 @@ namespace sqpkv {
     } \
   } while (0)
 
-  
+
 class RdmaCommunicator {
 public:
   RdmaCommunicator(std::shared_ptr<WorkerPool> worker_pool);
@@ -67,12 +67,12 @@ protected:
   virtual Status InitContext(Context *context, struct rdma_cm_id *id);
   virtual Status PostInitContext(Context *context);
   virtual StatusOr<Context> BuildContext(struct rdma_cm_id *id);
-  
+
   void OnWorkCompletion(Context *context, struct ibv_wc *wc);
   void PollCompletionQueue(Context *context);
 
   Status OnEvent(struct rdma_cm_event *event);
-  
+
   void BuildQueuePairAttr(Context *context, struct ibv_qp_init_attr* attributes);
   void BuildParams(struct rdma_conn_param *params);
   Status RegisterMemoryRegion(Context *context);

@@ -18,7 +18,7 @@ StatusOr<ClientRequestRouter> ClientRequestRouterFactory::CreateClientRequestRou
   for (size_t i = 0; i < hostnames_.size(); ++i) {
     std::string &hostname = hostnames_[i];
     int port = ports_[i];
-    spdlog::get("console")->debug("[RouterFactory] Worker pool is {}", (void *) worker_pool_.get());
+    // spdlog::get("console")->debug("[RouterFactory] Worker pool is {}", (void *) worker_pool_.get());
     auto client = std::make_unique<RdmaClient>(worker_pool_, request_handler.get(), hostname, port);
     s = client->Connect();
     if (!s.ok()) {

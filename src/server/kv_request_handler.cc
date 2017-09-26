@@ -31,7 +31,7 @@ Status KvRequestHandler::HandleRecvCompletion(Context *context, bool successful)
       rocksdb::Slice key = get->key();
       std::string value;
       auto get_status = db_->Get(rocksdb::ReadOptions(), key, &value);
-      spdlog::get("console")->debug("Status is {}", get_status.ToString());
+      // spdlog::get("console")->debug("Status is {}", get_status.ToString());
       GetResponsePacket get_resp(get_status, value, out_buffer);
       size = get_resp.ToBinary().size_;
     }
@@ -42,7 +42,7 @@ Status KvRequestHandler::HandleRecvCompletion(Context *context, bool successful)
       rocksdb::Slice key = put->key();
       rocksdb::Slice value = put->value();
       auto put_status = db_->Put(rocksdb::WriteOptions(), key, value);
-      spdlog::get("console")->debug("Status is {}", put_status.ToString());
+      // spdlog::get("console")->debug("Status is {}", put_status.ToString());
       PutResponsePacket put_resp(put_status, out_buffer);
       size = put_resp.ToBinary().size_;
     }
@@ -52,7 +52,7 @@ Status KvRequestHandler::HandleRecvCompletion(Context *context, bool successful)
       DeletePacket *delete_packet = reinterpret_cast<DeletePacket *>(packet.get());
       rocksdb::Slice key = delete_packet->key();
       auto delete_status = db_->Delete(rocksdb::WriteOptions(), key);
-      spdlog::get("console")->debug("Status is {}", delete_status.ToString());
+      // spdlog::get("console")->debug("Status is {}", delete_status.ToString());
       DeleteResponsePacket delete_resp(delete_status, out_buffer);
       size = delete_resp.ToBinary().size_;
     }

@@ -22,7 +22,7 @@ namespace sqpkv {
 //     }
 //   }
 //   ss << ']' << std::endl;
-//   spdlog::get("console")->debug(ss.str());
+//   // spdlog::get("console")->debug(ss.str());
 // }
 
 static Status CheckReadErr(int rc) {
@@ -61,13 +61,13 @@ Status Protocol::SendPacket(int sock, const Packet &packet) {
 }
 
 Status Protocol::SendPacket(int sock, rocksdb::Slice data) {
-  spdlog::get("console")->debug("Packet size is ", GetPacketSize(data.data_));
-  spdlog::get("console")->debug("Sending a total of {} bytes through the network", data.size_);
+  // spdlog::get("console")->debug("Packet size is ", GetPacketSize(data.data_));
+  // spdlog::get("console")->debug("Sending a total of {} bytes through the network", data.size_);
   // LogBinary(data);
   uint32_t size_written = 0;
   while (data.size_ > 0) {
     if (data.size_ >= kMaxNetPacketSize) {
-      spdlog::get("console")->debug("Sending {} bytes through the network", kMaxNetPacketSize);
+      // spdlog::get("console")->debug("Sending {} bytes through the network", kMaxNetPacketSize);
       int rc = write(sock, data.data_ + size_written, kMaxNetPacketSize);
       if (rc <= 0) {
         return Status::Err();
@@ -75,7 +75,7 @@ Status Protocol::SendPacket(int sock, rocksdb::Slice data) {
       data.size_ -= kMaxNetPacketSize;
       size_written += kMaxNetPacketSize;
     } else {
-      spdlog::get("console")->debug("Sending {} bytes through the network", data.size_);
+      // spdlog::get("console")->debug("Sending {} bytes through the network", data.size_);
       int rc = write(sock, data.data_ + size_written, data.size_);
       if (rc <= 0) {
         return Status::Err();
@@ -122,7 +122,7 @@ Status Protocol::ReadWholePacket(int sock, std::vector<char> &buf) {
   buf.resize(rc);
   buf_len -= rc;
   long remaining_bytes = static_cast<long>(GetPacketSize(buf.data()) - rc);
-  spdlog::get("console")->debug("Reading a total of {} bytes through the network", remaining_bytes + rc);
+  // spdlog::get("console")->debug("Reading a total of {} bytes through the network", remaining_bytes + rc);
   // LogBinary(rocksdb::Slice(buf.data(), buf.size()));
   // Still have so many bytes to read.
   while (remaining_bytes > 0) {
@@ -141,13 +141,13 @@ Status Protocol::ReadWholePacket(int sock, std::vector<char> &buf) {
     buf.resize(original_size + rc);
     buf_len -= rc;
     remaining_bytes -= rc;
-    spdlog::get("console")->debug("Read {} bytes from network", rc);
+    // spdlog::get("console")->debug("Read {} bytes from network", rc);
   }
-  spdlog::get("console")->debug("Read {} bytes from network in total", buf.size());
+  // spdlog::get("console")->debug("Read {} bytes from network in total", buf.size());
   if (remaining_bytes == 0) {
     return Status::Ok();
   } else {
-    spdlog::get("console")->debug("Got more data than expected.");
+    // spdlog::get("console")->debug("Got more data than expected.");
     return Status::Err();
   }
 }

@@ -77,6 +77,11 @@ set(CONNECTOR_SRCS
     src/connector/rdma_connection.cc
     src/connector/socket_connection.cc
     src/connector/user_request_handler.cc
+    src/connector/request_handlers/get_user_request_handler.cc
+    src/connector/request_handlers/put_user_request_handler.cc
+    src/connector/request_handlers/delete_user_request_handler.cc
+    src/connector/request_handlers/get_all_user_request_handler.cc
+    src/connector/request_handlers/end_user_request_handler.cc
     ${PROTOCOL_SRCS}
     ${RDMA_SRCS})
 
@@ -86,12 +91,13 @@ set(CLIENT_SRCS
 set(EXPONENTIAL_SRCS
     src/client/exponential_client.cc
     src/client/exponential_distribution.cc
+    src/client/exponential_request_generator.cc
     src/client/random_generator.cc)
 
 add_library(sqpkv_connector STATIC
     ${CONNECTOR_SRCS}
     ${UTILS_SRCS})
-    
+
 add_executable(sqpkv_server
     ${RDMA_SRCS}
     ${PROTOCOL_SRCS}
@@ -134,7 +140,7 @@ target_link_libraries(rdma_test_server
     ${GFLAGS_LIBRARY}
     ${RDMA_LIBRARY}
     ${IBVERBS_LIBRARY} )
- 
+
 add_executable(rdma_test_client
     ${RDMA_SRCS}
     test/rdma_client.cc
@@ -151,7 +157,7 @@ add_executable(echo_server
     ${UTILS_SRCS} )
 target_link_libraries(echo_server
     ${GFLAGS_LIBRARY} )
- 
+
 add_executable(echo_client
     test/echo_client.cc
     ${UTILS_SRCS} )

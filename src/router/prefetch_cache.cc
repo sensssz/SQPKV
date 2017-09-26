@@ -15,7 +15,7 @@ PrefetchCache::PrefetchCache() :
     id_(global_id_.fetch_add(1)), num_finished_(0), value_fetched_(false) {}
 
 void PrefetchCache::AddNewValue(const std::string &key, const char *value) {
-  spdlog::get("console")->debug("[Cache {}] Value for {} retrieved.", id_, key);
+  // spdlog::get("console")->debug("[Cache {}] Value for {} retrieved.", id_, key);
   size_t index = key_indices_[key];
   size_t num_finished = ++num_finished_;
   bool value_fetched = value_fetched_.load();
@@ -37,14 +37,14 @@ Status PrefetchCache::SetRealKey(
     value_fetched_ = true;
   } else {
     size_t real_index = iter->second;
-    spdlog::get("console")->debug("[Cache {}] Wait for value for real key {} to be fetched.", id_, real_key);
+    // spdlog::get("console")->debug("[Cache {}] Wait for value for real key {} to be fetched.", id_, real_key);
     while (value == nullptr) {
       value = prefetched_values_[real_index];
     }
     value_fetched_ = true;
   }
   if (num_finished_ == key_indices_.size()) {
-    spdlog::get("console")->debug("[Cache {}] All values already retrieved. Clear the cache.", id_);
+    // spdlog::get("console")->debug("[Cache {}] All values already retrieved. Clear the cache.", id_);
     num_finished_ = 0;
     value_fetched_ = false;
     prefetched_values_.clear();

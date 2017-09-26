@@ -28,7 +28,7 @@ Status RdmaClient::Connect() {
 
   freeaddrinfo(addr);
 
-  spdlog::get("console")->debug("Connecting to RDMA server...");
+  // spdlog::get("console")->debug("Connecting to RDMA server...");
   while (rdma_get_cm_event(event_channel_, &event) == 0) {
     struct rdma_cm_event event_copy;
 
@@ -87,7 +87,7 @@ Status RdmaClient::CancelOustanding() {
 }
 
 Status RdmaClient::OnAddressResolved(struct rdma_cm_id *id) {
-  spdlog::get("console")->debug("Address resolved");
+  // spdlog::get("console")->debug("Address resolved");
 
   auto status_or = BuildContext(id);
   if (!status_or.ok()) {
@@ -101,7 +101,7 @@ Status RdmaClient::OnAddressResolved(struct rdma_cm_id *id) {
 }
 
 Status RdmaClient::OnRouteResolved(struct rdma_cm_id *id) {
-  spdlog::get("console")->debug("Route resolved");
+  // spdlog::get("console")->debug("Route resolved");
 
   struct rdma_conn_param cm_params;
   BuildParams(&cm_params);

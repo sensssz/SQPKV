@@ -29,7 +29,7 @@ private:
 
   uint32_t id_;
 
-  bool in_use_;
+  std::atomic<bool> in_use_;
   std::atomic<size_t> num_finished_;
   std::atomic<bool> value_fetched_;
   std::unordered_map<std::string, size_t> key_indices_;

@@ -16,13 +16,13 @@ RdmaCommunicator::RdmaCommunicator(std::shared_ptr<WorkerPool> worker_pool) : wo
 }
 
 Status RdmaCommunicator::OnConnection(struct rdma_cm_id *id) {
-  spdlog::get("console")->debug("Connection established");
+  // spdlog::get("console")->debug("Connection established");
   reinterpret_cast<Context *>(id->context)->connected = true;
   return Status::Ok();
 }
 
 Status RdmaCommunicator::OnDisconnect(struct rdma_cm_id *id) {
-  spdlog::get("console")->debug("Received disconnect request");
+  // spdlog::get("console")->debug("Received disconnect request");
   DestroyConnection(id->context);
   return Status::Ok();
 }
@@ -59,7 +59,8 @@ void RdmaCommunicator::OnWorkCompletion(Context *context, struct ibv_wc *wc) {
       auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(recv_end - context->recv_start).count();
       spdlog::get("console")->critical(duration);
     }
-    worker_pool_->SubmitWorkUnit(WorkUnit{WorkType::kRecv, context, successful, request_handler});
+    // worker_pool_->SubmitWorkUnit(WorkUnit{WorkType::kRecv, context, successful, request_handler});
+    request_handler->HandleRecvCompletion(context, successful);
   }
 }
 

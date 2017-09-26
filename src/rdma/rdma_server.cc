@@ -29,7 +29,7 @@ int RdmaServer::port() {
 }
 
 void RdmaServer::Run() {
-  spdlog::get("console")->debug("Running event loop on server");
+  // spdlog::get("console")->debug("Running event loop on server");
   struct rdma_cm_event *event = nullptr;
   while (rdma_get_cm_event(event_channel_, &event) == 0) {
     struct rdma_cm_event event_copy;
@@ -37,7 +37,7 @@ void RdmaServer::Run() {
     memcpy(&event_copy, event, sizeof(*event));
     rdma_ack_cm_event(event);
 
-    spdlog::get("console")->debug("Event retrieved.");
+    // spdlog::get("console")->debug("Event retrieved.");
     auto status = OnEvent(&event_copy);
     if (!status.ok()) {
       spdlog::get("console")->error("Error processing event {}", status.message());
@@ -60,7 +60,7 @@ Status RdmaServer::OnRouteResolved(struct rdma_cm_id *id) {
 }
 
 Status RdmaServer::OnConnectRequest(struct rdma_cm_id *id) {
-  spdlog::get("console")->debug("Received connect request");
+  // spdlog::get("console")->debug("Received connect request");
   auto status_or = BuildContext(id);
   if (!status_or.ok()) {
     return status_or.status();

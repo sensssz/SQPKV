@@ -58,7 +58,7 @@ const char *Packet::ReadSlice(const char *buf, rocksdb::Slice &data) {
   uint32_t size;
   data.data_ = ReadValue(buf, size);
   data.size_ = size;
-  // spdlog::get("console")->debug("Size is {}, string is {}", data.size_, data.ToString());
+  // // spdlog::get("console")->debug("Size is {}, string is {}", data.size_, data.ToString());
   return data.data_ + data.size_;
 }
 

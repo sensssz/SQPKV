@@ -14,6 +14,10 @@ sleep_for() {
 }
 
 kill_oustanding_job() {
+  jname=`bjobs | awk 'NR==2{print \$7}'`
+  if [ -z "jname" ] || [ "$jname" != "sqpkv" ]; then
+    return
+  fi
   jid=`bjobs | awk 'NR==2{print \$1}'`
   if [ ! -z "${jid}" ]; then
     bkill $@ ${jid}

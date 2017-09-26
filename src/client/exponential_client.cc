@@ -1,4 +1,5 @@
 #include "exponential_distribution.h"
+#include "exponential_request_generator.h"
 #include "random_generator.h"
 #include "sqpkv/connection_factory.h"
 
@@ -6,6 +7,7 @@
 #include "spdlog/spdlog.h"
 
 #include <fstream>
+#include <future>
 #include <iostream>
 #include <numeric>
 #include <string>
@@ -104,29 +106,45 @@ int main(int argc, char *argv[]) {
 
   auto connection = CreateConnection();
   sqpkv::ExponentialDistribution dist(FLAGS_lambda, FLAGS_max_value);
-  int key_id = 0;
-  std::string value;
-  std::vector<int> latencies;
-  latencies.reserve(FLAGS_num_requests);
-  for (int i = 0; i < FLAGS_num_requests; i++) {
-    std::string key = kPrefix + std::to_string(key_id);
-    auto start = std::chrono::high_resolution_clock::now();
-    auto s = connection->Get(key, value);
-    if (!s.ok()) {
-      spdlog::get("console")->error("Error getting item: {}", s.message());
-      return 1;
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto latency = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    latencies.push_back(static_cast<int>(latency));
-    // assert(value == kvs->at(key));
-    std::this_thread::sleep_for(std::chrono::microseconds(FLAGS_think_time));
 
-    key_id = (key_id + dist.Next() + 1) % kMaxItemId;
-    std::cout << '\r' << key << " " << i + 1 << "/" << FLAGS_num_requests << " finished";
-    std::cout.flush();
-  }
-  std::cout << std::endl;
+  sqpkv::ExponentialRequestGenerator request_generator(
+    std::move(connection), FLAGS_num_requests, FLAGS_think_time,
+    std::move(dist), kPrefix, kMaxItemId);
+  auto future = request_generator.GetFutureLatencies();
+  request_generator.Initiate();
+  future.wait();
+  auto latencies = std::move(future.get());
+
+  // int key_id = 0;
+  // std::string value;
+  // std::vector<int> latencies;
+  // latencies.reserve(FLAGS_num_requests);
+  // for (int i = 0; i < FLAGS_num_requests; i++) {
+  //   std::string key = kPrefix + std::to_string(key_id);
+  //   std::promise<int> promise;
+  //   auto future_latency = promise.get_future();
+  //   std::chrono::time_point<std::chrono::high_resolution_clock> start;
+  //   std::function<void (sqpkv::StatusOr<std::string>)> callback = [&](sqpkv::StatusOr<std::string> status_or_value) {
+  //     auto end = std::chrono::high_resolution_clock::now();
+  //     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+  //     promise.set_value(duration);
+  //   };
+  //   start = std::chrono::high_resolution_clock::now();
+  //   auto s = connection->GetAsync(key, &callback);
+  //   if (!s.ok()) {
+  //     spdlog::get("console")->error("Error getting item: {}", s.message());
+  //     return 1;
+  //   }
+  //   future_latency.wait();
+  //   latencies.push_back(future_latency.get());
+  //   // assert(value == kvs->at(key));
+  //   std::this_thread::sleep_for(std::chrono::microseconds(FLAGS_think_time));
+
+  //   key_id = (key_id + dist.Next() + 1) % kMaxItemId;
+  //   std::cout << '\r' << key << " " << i + 1 << "/" << FLAGS_num_requests << " finished";
+  //   std::cout.flush();
+  // }
+  // std::cout << std::endl;
 
   std::ofstream out_file(FLAGS_latency_file);
   for (auto latency : latencies) {

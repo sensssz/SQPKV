@@ -13,7 +13,7 @@ ClientRequestRdmaServer::ClientRequestRdmaServer(
              std::move(hostnames), std::move(ports)) {}
 
 Status ClientRequestRdmaServer::OnConnectRequest(struct rdma_cm_id *id) {
-  spdlog::get("console")->debug("Received connect request");
+  // spdlog::get("console")->debug("Received connect request");
   auto status_or = BuildContext(id);
   if (!status_or.ok()) {
     return status_or.status();

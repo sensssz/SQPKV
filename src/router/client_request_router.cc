@@ -30,7 +30,7 @@ Status ClientRequestRouter::ProcessClientRequestPacket(StatusOr<CommandPacket> &
     spdlog::get("console")->error("Error reading from client: " + packet.message());
     return packet.status();
   } else if (packet.eof()) {
-    spdlog::get("console")->debug("Connection closed");
+    // spdlog::get("console")->debug("Connection closed");
     return packet.status();
   }
   Status status;
@@ -40,13 +40,13 @@ Status ClientRequestRouter::ProcessClientRequestPacket(StatusOr<CommandPacket> &
       GetPacket *get = reinterpret_cast<GetPacket *>(packet.GetPtr());
       rocksdb::Slice key_slice = get->key();
       std::string key = key_slice.ToString();
-      spdlog::get("console")->debug("New request get {}", key);
+      // spdlog::get("console")->debug("New request get {}", key);
       if (std::find(speculations_.begin(), speculations_.end(), key) != speculations_.end()) {
-        spdlog::get("console")->debug("Speculation hits");
+        // spdlog::get("console")->debug("Speculation hits");
         current_prefetch_cache_->SetRealKey(key, sender_.get());
       } else {
-        spdlog::get("console")->debug("Speculation misses, sending another request to the shard server.");
-        if (current_prefetch_cache_ != nullptr) {
+        // spdlog::get("console")->debug("Speculation misses, sending another request to the shard server.");
+        if (FLAGS_sqp_enabled && current_prefetch_cache_ != nullptr) {
           current_prefetch_cache_->SetRealKey(key, sender_.get());
         }
         const rocksdb::Slice &data = packet->ToBinary();
@@ -169,7 +169,7 @@ void ClientRequestRouter::DoSpeculation(const std::string &key) {
   size_t i = 0;
   for (auto &speculation : speculations_) {
     auto sqp_handler = sqp_handlers[i];
-    spdlog::get("console")->debug("Speculating {}", speculation);
+    // spdlog::get("console")->debug("Speculating {}", speculation);
     current_prefetch_cache_->AddPrefetchingKey(speculation);
     sqp_handler->OnHandleNewRequest(speculation, current_prefetch_cache_);
     GetPacket packet(speculation);

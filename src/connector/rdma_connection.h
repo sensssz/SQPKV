@@ -15,12 +15,19 @@ public:
     client_.Disconnect();
   }
   Status Connect();
-  virtual Status Get(const std::string &key, std::string &value);
-  virtual Status Put(const std::string &key, const std::string &value);
-  virtual Status Delete(const std::string &key);
-  virtual Status GetAll(const std::string &key, std::vector<std::string> &keys);
-  virtual Status End(std::string &message);
-  virtual void Close();
+  virtual Status Get(const std::string &key, std::string &value) override;
+  virtual Status Put(const std::string &key, const std::string &value) override;
+  virtual Status Delete(const std::string &key) override;
+  virtual Status GetAll(const std::string &key, std::vector<std::string> &keys) override;
+  virtual Status End(std::string &message) override;
+
+  virtual Status GetAsync(const std::string &key, std::function<void (StatusOr<std::string>)> *callback) override;
+  virtual Status PutAsync(const std::string &key, const std::string &value, std::function<void (Status)> *callback) override;
+  virtual Status DeleteAsync(const std::string &key, std::function<void (Status)> *callback) override;
+  virtual Status GetAllAsync(const std::string &prefix, std::function<void (StatusOr<std::vector<std::string>>)> *callback) override;
+  virtual Status EndAsync(std::function<void (StatusOr<std::string>)> *callback) override;
+
+  virtual void Close() override;
 
 private:
   RdmaClient client_;

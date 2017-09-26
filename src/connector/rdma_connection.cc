@@ -1,5 +1,10 @@
 #include "rdma_connection.h"
 #include "user_request_handler.h"
+#include "request_handlers/get_user_request_handler.h"
+#include "request_handlers/put_user_request_handler.h"
+#include "request_handlers/get_all_user_request_handler.h"
+#include "request_handlers/delete_user_request_handler.h"
+#include "request_handlers/end_user_request_handler.h"
 #include "protocol/packet.h"
 
 #include <future>
@@ -111,6 +116,37 @@ Status RdmaConnection::End(std::string &message) {
   message = std::move(*status_or_message.GetPtr());
   return Status::Ok();
 }
+
+Status RdmaConnection::GetAsync(const std::string &key, std::function<void (StatusOr<std::string>)> *callback) {
+  GetPacket packet(key, client_.GetRemoteBuffer());
+  auto handler = new GetUserRequestHandler(callback);
+  return client_.SendToServer(packet.ToBinary().size_, handler);
+}
+
+Status RdmaConnection::PutAsync(const std::string &key, const std::string &value, std::function<void (Status)> *callback) {
+  PutPacket packet(key, client_.GetRemoteBuffer());
+  auto handler = new PutUserRequestHandler(callback);
+  return client_.SendToServer(packet.ToBinary().size_, handler);
+}
+
+Status RdmaConnection::DeleteAsync(const std::string &key, std::function<void (Status)> *callback) {
+  DeletePacket packet(key, client_.GetRemoteBuffer());
+  auto handler = new DeleteUserRequestHandler(callback);
+  return client_.SendToServer(packet.ToBinary().size_, handler);
+}
+
+Status RdmaConnection::GetAllAsync(const std::string &prefix, std::function<void (StatusOr<std::vector<std::string>>)> *callback) {
+  GetAllPacket packet(prefix, client_.GetRemoteBuffer());
+  auto handler = new GetAllUserRequestHandler(callback);
+  return client_.SendToServer(packet.ToBinary().size_, handler);
+}
+
+Status RdmaConnection::EndAsync(std::function<void (StatusOr<std::string>)> *callback) {
+  EndPacket packet(client_.GetRemoteBuffer());
+  auto handler = new EndUserRequestHandler(callback);
+  return client_.SendToServer(packet.ToBinary().size_, handler);
+}
+
 
 void RdmaConnection::Close() {
   client_.Disconnect();

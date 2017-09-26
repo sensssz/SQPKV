@@ -38,14 +38,14 @@ class PrintRequestHandler : public RequestHandler {
 public:
   virtual Status HandleRecvCompletion(Context *context, bool successful) override {
     char *out_buffer = context->send_region;
-    size_t size = 20;
-    gen_random(out_buffer, size);
-    spdlog::get("console")->info("Random response: {}", out_buffer);
-    return RdmaCommunicator::PostSend(context, size, this);
+    memcpy(context->send_region, "huazai", 7);
+    // spdlog::get("console")->info("Random response: {}", out_buffer);
+    RdmaCommunicator::PostReceive(context, this);
+    return RdmaCommunicator::PostSend(context, 7, this);
   }
 
   virtual Status HandleSendCompletion(Context *context, bool successful) override {
-    return RdmaCommunicator::PostReceive(context, this);
+    return Status::Ok();
   }
 
   virtual std::string name() {
